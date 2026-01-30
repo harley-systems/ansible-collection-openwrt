@@ -1,0 +1,83 @@
+---
+# ACME role - Let's Encrypt certificates with DNS-01 validation
+
+- name: Install ACME packages
+  community.general.opkg:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - acme
+    - acme-acmesh-dnsapi
+    - luci-app-acme
+  tags: [acme, acme_packages]
+
+- name: Create ACME configuration directory
+  ansible.builtin.file:
+    path: /etc/acme
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  tags: [acme, acme_config]
+
+- name: Deploy DNS provider credentials
+  ansible.builtin.template:
+    src: credentials.env.j2
+    dest: /etc/acme/credentials.env
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart acme
+  tags: [acme, acme_credentials]
+
+- name: Deploy ACME configuration
+  ansible.builtin.template:
+    src: acme.j2
+    dest: /etc/config/acme
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart acme
+  tags: [acme, acme_config]
+
+- name: Save credentials to ACME account.conf (Cloudflare)
+  ansible.builtin.lineinfile:
+    path: /etc/acme/account.conf
+    line: "{{ item }}"
+    create: true
+    owner: root
+    group: root
+    mode: "0600"
+  loop:
+    - 'SAVED_CF_Token="{{ acme_cf_token }}"'
+    - 'SAVED_CF_Zone_ID="{{ acme_cf_zone_id }}"'
+  when: acme_dns_provider == 'dns_cf'
+  notify: restart acme
+  tags: [acme, acme_credentials]
+
+- name: Enable and start ACME service
+  community.general.openwrt_init:
+    name: acme
+    state: started
+    enabled: true
+  tags: [acme, acme_service]
+
+- name: Configure uhttpd to use ACME certificate
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: cert
+    val: "{{ acme_cert_dir }}/fullchain.cer"
+  when: acme_configure_uhttpd | bool
+  notify: restart uhttpd
+  tags: [acme, acme_uhttpd]
+
+- name: Configure uhttpd to use ACME key
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: key
+    val: "{{ acme_cert_dir }}/{{ acme_domain }}.key"
+  when: acme_configure_uhttpd | bool
+  notify: restart uhttpd
+  tags: [acme, acme_uhttpd]

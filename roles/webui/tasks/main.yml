@@ -1,0 +1,80 @@
+---
+# WebUI role - Configure uhttpd with HTTPS/TLS for LuCI
+
+- name: Install TLS packages
+  community.general.opkg:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - px5g-mbedtls
+    - luci-ssl
+    - luci-app-uhttpd
+  notify: restart uhttpd
+  tags: [webui, webui_packages]
+
+- name: Copy SSL certificate
+  ansible.builtin.copy:
+    src: "{{ webui_cert_src }}"
+    dest: "{{ webui_cert_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when: webui_copy_certs | bool
+  notify: restart uhttpd
+  tags: [webui, webui_certs]
+
+- name: Copy SSL private key
+  ansible.builtin.copy:
+    src: "{{ webui_key_src }}"
+    dest: "{{ webui_key_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when: webui_copy_certs | bool
+  notify: restart uhttpd
+  tags: [webui, webui_certs]
+
+- name: Configure uhttpd certificate path
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: cert
+    val: "{{ webui_cert_path }}"
+  notify: restart uhttpd
+  tags: [webui, webui_config]
+
+- name: Configure uhttpd key path
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: key
+    val: "{{ webui_key_path }}"
+  notify: restart uhttpd
+  tags: [webui, webui_config]
+
+- name: Configure uhttpd HTTP listen address
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: listen_http
+    val: "{{ webui_listen_ip }}:{{ webui_http_port }}"
+  notify: restart uhttpd
+  tags: [webui, webui_config]
+
+- name: Configure uhttpd HTTPS listen address
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: listen_https
+    val: "{{ webui_listen_ip }}:{{ webui_https_port }}"
+  notify: restart uhttpd
+  tags: [webui, webui_config]
+
+- name: Configure HTTPS redirect
+  harley.openwrt.uci:
+    p: uhttpd
+    s: main
+    name: redirect_https
+    val: "{{ '1' if webui_redirect_https else '0' }}"
+  notify: restart uhttpd
+  tags: [webui, webui_config]

@@ -1,0 +1,7 @@
+---
+# WebUI handlers
+
+- name: restart uhttpd
+  community.general.openwrt_init:
+    name: uhttpd
+    state: restarted

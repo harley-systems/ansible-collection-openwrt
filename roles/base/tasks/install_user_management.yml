@@ -1,0 +1,40 @@
+---
+# Install user management tools and configure sudo
+
+- name: Install shadow-useradd
+  community.general.opkg:
+    name: shadow-useradd
+    state: present
+
+- name: Install shadow-groupadd
+  community.general.opkg:
+    name: shadow-groupadd
+    state: present
+
+- name: Install shadow-usermod
+  community.general.opkg:
+    name: shadow-usermod
+    state: present
+
+- name: Install shadow-groupmod
+  community.general.opkg:
+    name: shadow-groupmod
+    state: present
+
+- name: Install sudo
+  community.general.opkg:
+    name: sudo
+    state: present
+
+- name: Ensure wheel group exists
+  ansible.builtin.group:
+    name: wheel
+    state: present
+
+- name: Allow wheel group passwordless sudo
+  ansible.builtin.lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'

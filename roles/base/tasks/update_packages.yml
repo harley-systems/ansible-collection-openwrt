@@ -1,0 +1,6 @@
+---
+# Update opkg package lists
+
+- name: Update opkg package lists
+  ansible.builtin.raw: opkg update
+  changed_when: false

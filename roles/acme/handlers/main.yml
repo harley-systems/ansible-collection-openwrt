@@ -1,0 +1,12 @@
+---
+# ACME handlers
+
+- name: restart acme
+  community.general.openwrt_init:
+    name: acme
+    state: restarted
+
+- name: restart uhttpd
+  community.general.openwrt_init:
+    name: uhttpd
+    state: restarted

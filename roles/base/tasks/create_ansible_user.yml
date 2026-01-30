@@ -1,0 +1,55 @@
+---
+# Create ansible user for ongoing management
+
+- name: Ensure /home directory exists
+  ansible.builtin.file:
+    path: /home
+    state: directory
+    mode: "0755"
+
+- name: Check if ansible user home exists
+  ansible.builtin.stat:
+    path: "{{ base_ansible_user_home }}"
+  register: _base_ansible_home
+
+- name: Create ansible user home directory
+  ansible.builtin.file:
+    path: "{{ base_ansible_user_home }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  when: not _base_ansible_home.stat.exists
+
+- name: Ensure ansible group exists
+  ansible.builtin.group:
+    name: "{{ base_ansible_user }}"
+    state: present
+    gid: "{{ base_ansible_user_id | string }}"
+
+- name: Create ansible user
+  ansible.builtin.user:
+    name: "{{ base_ansible_user }}"
+    comment: "Ansible automation user"
+    uid: "{{ base_ansible_user_id | string }}"
+    group: "{{ base_ansible_user_id | string }}"
+    groups: "{{ base_ansible_user_groups }}"
+    shell: "{{ base_ansible_user_shell }}"
+    createhome: true
+    home: "{{ base_ansible_user_home }}"
+    password: "{{ base_ansible_password | password_hash('sha512') }}"
+    update_password: on_create
+
+- name: Set ansible user home directory ownership
+  ansible.builtin.file:
+    path: "{{ base_ansible_user_home }}"
+    state: directory
+    owner: "{{ base_ansible_user }}"
+    group: "{{ base_ansible_user }}"
+    mode: "0750"
+
+- name: Add authorized SSH key for ansible user
+  ansible.posix.authorized_key:
+    user: "{{ base_ansible_user }}"
+    key: "{{ base_ansible_authorized_key }}"
+    state: present

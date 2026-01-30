@@ -1,0 +1,12 @@
+---
+# DHCP/DNS handlers
+
+- name: restart dnsmasq
+  community.general.openwrt_init:
+    name: dnsmasq
+    state: restarted
+
+- name: restart odhcpd
+  community.general.openwrt_init:
+    name: odhcpd
+    state: restarted

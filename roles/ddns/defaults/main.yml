@@ -1,0 +1,36 @@
+---
+# DDNS role defaults
+
+# Enable/disable DDNS (install packages but don't enable service)
+ddns_enabled: false
+
+# Global settings
+ddns_date_format: "%F %R"
+ddns_log_lines: 250
+ddns_allow_private_ip: false
+
+# DDNS services to configure
+# Example:
+# ddns_services:
+#   - name: cloudflare_home
+#     enabled: true
+#     provider: cloudflare.com-v4
+#     domain: vpn.example.com
+#     lookup_host: vpn.example.com
+#     username: "zone_id_here"           # For Cloudflare: Zone ID
+#     password: "api_token_here"         # For Cloudflare: API Token
+#     ip_source: interface               # interface, network, web, script
+#     ip_interface: pppoe-wan            # Interface to get IP from
+#     interface: wan                     # Trigger interface
+#     use_https: true
+ddns_services: []
+
+# Common provider names:
+# - cloudflare.com-v4    (Cloudflare)
+# - dyndns.org           (DynDNS)
+# - no-ip.com            (No-IP)
+# - freedns.afraid.org   (FreeDNS)
+# - namecheap.com        (Namecheap)
+# - godaddy.com-v1       (GoDaddy)
+# - route53-v1           (AWS Route53)
+# See: opkg list | grep ddns-scripts

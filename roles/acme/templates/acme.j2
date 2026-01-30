@@ -1,0 +1,15 @@
+# ACME (Let's Encrypt) configuration for OpenWRT
+# Managed by Ansible - do not edit manually
+
+config acme
+	option account_email '{{ acme_email }}'
+	option debug '{{ "1" if acme_debug else "0" }}'
+
+config cert '{{ acme_cert_name }}'
+	option enabled '1'
+	option use_staging '{{ "1" if acme_use_staging else "0" }}'
+	option key_type '{{ acme_key_type }}'
+	option domains '{{ acme_domain }}'
+	option validation_method 'dns'
+	option dns '{{ acme_dns_provider }}'
+	option credentials '/etc/acme/credentials.env'

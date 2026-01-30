@@ -1,0 +1,75 @@
+---
+# Network role defaults
+
+# =============================================================================
+# WAN Configuration
+# =============================================================================
+
+network_wan_enabled: true
+network_wan_interface: wan
+
+# WAN protocol: pppoe, dhcp, static
+network_wan_proto: dhcp
+
+# PPPoE settings (required if proto=pppoe)
+# network_wan_username: "user@isp.com"
+# network_wan_password: "secret"
+
+# Static IP settings (required if proto=static)
+# network_wan_ipaddr: "203.0.113.10"
+# network_wan_netmask: "255.255.255.0"
+# network_wan_gateway: "203.0.113.1"
+# network_wan_dns: "8.8.8.8 8.8.4.4"
+
+# Physical interface (device-specific)
+# network_wan_ifname: "eth1.2"
+
+# IPv6 support
+network_wan_ipv6: auto
+
+# PPPoE keepalive (0 = disabled)
+network_wan_keepalive: 0
+
+# =============================================================================
+# LAN Configuration
+# =============================================================================
+
+network_lan_enabled: true
+network_lan_interface: lan
+network_lan_proto: static
+network_lan_ipaddr: "192.168.1.1"
+network_lan_netmask: "255.255.255.0"
+
+# Optional LAN settings
+# network_lan_ifname: "eth0.1"
+# network_lan_type: bridge
+# network_lan_dns: "192.168.1.1"
+
+# =============================================================================
+# WiFi Configuration
+# =============================================================================
+
+network_wifi_enabled: false
+
+# WiFi radios list
+# Each radio configures both the radio hardware and its default interface
+# Example:
+# network_wifi_radios:
+#   - name: radio0           # Radio section name
+#     interface: default_radio0  # Interface section name
+#     enabled: true
+#     country: US
+#     channel: auto          # or specific channel number
+#     htmode: VHT80          # HT20, HT40, VHT80, VHT160, HE80, etc.
+#     txpower: 20            # Transmit power in dBm
+#     legacy_rates: false    # Enable legacy rates (2.4GHz compatibility)
+#     distance: 20           # Distance optimization in meters
+#     network: lan           # Network to bridge to
+#     mode: ap               # ap, sta, adhoc, etc.
+#     ssid: "MyNetwork"
+#     encryption: psk2       # none, psk, psk2, psk-mixed, sae, sae-mixed
+#     key: "wifi_password"
+#     macaddr: ""            # Optional: override MAC address
+#     hidden: false          # Hide SSID
+
+network_wifi_radios: []

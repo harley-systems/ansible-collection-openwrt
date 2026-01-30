@@ -1,0 +1,70 @@
+---
+# Inventory Adapter for dhcp_dns role
+#
+# This file builds dhcp_dns variables from a conventional inventory structure.
+# Include this in your playbook's pre_tasks if your inventory follows the convention.
+#
+# CONVENTION:
+#   - Hosts have 'ip_address' variable (required for DHCP/DNS)
+#   - Hosts have 'mac_address' variable (required for static DHCP leases)
+#   - Hosts optionally have 'cname' variable (for DNS CNAME records)
+#   - Hosts optionally have 'fqdns_name' variable (for CNAME targets)
+#   - Group vars define 'dns_domain' (e.g., "home.lan")
+#
+# USAGE:
+#   pre_tasks:
+#     - name: Build dhcp_dns variables from inventory
+#       ansible.builtin.include_tasks:
+#         file: "{{ (lookup('ansible.builtin.config', 'COLLECTIONS_PATH') | split(':') | first) }}/ansible_collections/harley/openwrt/playbooks/includes/inventory_to_dhcp_dns.yml"
+#       tags: [dhcp_dns]
+#
+# VARIABLES PRODUCED:
+#   - dhcp_dns_static_leases: [{name, ip, mac}, ...]
+#   - dhcp_dns_hosts: [{name, ip}, ...]
+#   - dhcp_dns_cnames: [{alias, target, name}, ...]
+#
+# You can override 'inventory_adapter_group' to limit which hosts are included.
+# Default is 'all'.
+
+- name: Set inventory adapter defaults
+  ansible.builtin.set_fact:
+    _adapter_group: "{{ inventory_adapter_group | default('all') }}"
+    dhcp_dns_static_leases: []
+    dhcp_dns_hosts: []
+    dhcp_dns_cnames: []
+
+- name: Build static DHCP leases list from inventory
+  ansible.builtin.set_fact:
+    dhcp_dns_static_leases: >-
+      {{ dhcp_dns_static_leases + [{
+        'name': item,
+        'ip': hostvars[item]['ip_address'],
+        'mac': hostvars[item]['mac_address']
+      }] }}
+  loop: "{{ groups[_adapter_group] }}"
+  when:
+    - hostvars[item]['ip_address'] is defined
+    - hostvars[item]['mac_address'] is defined
+
+- name: Build DNS hosts list from inventory
+  ansible.builtin.set_fact:
+    dhcp_dns_hosts: >-
+      {{ dhcp_dns_hosts + [{
+        'name': item,
+        'ip': hostvars[item]['ip_address']
+      }] }}
+  loop: "{{ groups[_adapter_group] }}"
+  when:
+    - hostvars[item]['ip_address'] is defined
+
+- name: Build DNS CNAME list from inventory
+  ansible.builtin.set_fact:
+    dhcp_dns_cnames: >-
+      {{ dhcp_dns_cnames + [{
+        'alias': hostvars[item]['cname'],
+        'target': hostvars[item]['fqdns_name'] | default(item + '.' + (dns_domain | default('lan'))),
+        'name': item
+      }] }}
+  loop: "{{ groups[_adapter_group] }}"
+  when:
+    - hostvars[item]['cname'] is defined

@@ -1,0 +1,12 @@
+---
+# Install Python3 for Ansible module support
+
+- name: Install python3-light and python3-distutils
+  ansible.builtin.raw: opkg install python3-light python3-distutils
+  register: _base_python_install
+  changed_when: "'Installing ' in _base_python_install.stdout"
+
+- name: Install python3-logging
+  ansible.builtin.raw: opkg install python3-logging
+  register: _base_logging_install
+  changed_when: "'Installing ' in _base_logging_install.stdout"

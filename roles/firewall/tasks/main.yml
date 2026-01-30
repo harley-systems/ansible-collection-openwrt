@@ -1,0 +1,24 @@
+---
+# Firewall role - Configure OpenWRT firewall
+
+- name: Deploy firewall configuration
+  ansible.builtin.template:
+    src: firewall.j2
+    dest: /etc/config/firewall
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload firewall
+  tags: [firewall, firewall_config]
+
+- name: Ensure firewall.user exists
+  ansible.builtin.file:
+    path: "{{ firewall_user_include }}"
+    state: touch
+    owner: root
+    group: root
+    mode: "0644"
+    modification_time: preserve
+    access_time: preserve
+  when: firewall_include_user | bool
+  tags: [firewall, firewall_user]

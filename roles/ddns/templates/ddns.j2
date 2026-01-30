@@ -1,0 +1,48 @@
+# Dynamic DNS configuration
+# Managed by Ansible - do not edit manually
+
+config ddns 'global'
+	option ddns_dateformat '{{ ddns_date_format }}'
+	option ddns_loglines '{{ ddns_log_lines }}'
+	option upd_privateip '{{ "1" if ddns_allow_private_ip else "0" }}'
+
+{% for service in ddns_services %}
+config service '{{ service.name }}'
+	option enabled '{{ "1" if service.enabled | default(true) else "0" }}'
+	option service_name '{{ service.provider }}'
+	option lookup_host '{{ service.lookup_host | default(service.domain) }}'
+	option domain '{{ service.domain }}'
+{% if service.username is defined %}
+	option username '{{ service.username }}'
+{% endif %}
+{% if service.password is defined %}
+	option password '{{ service.password }}'
+{% endif %}
+	option use_https '{{ "1" if service.use_https | default(true) else "0" }}'
+	option cacert '{{ service.cacert | default("/etc/ssl/certs") }}'
+	option ip_source '{{ service.ip_source | default("interface") }}'
+{% if service.ip_interface is defined %}
+	option ip_interface '{{ service.ip_interface }}'
+{% endif %}
+{% if service.ip_network is defined %}
+	option ip_network '{{ service.ip_network }}'
+{% endif %}
+{% if service.ip_url is defined %}
+	option ip_url '{{ service.ip_url }}'
+{% endif %}
+	option interface '{{ service.interface | default("wan") }}'
+	option use_syslog '{{ "1" if service.use_syslog | default(true) else "0" }}'
+{% if service.check_interval is defined %}
+	option check_interval '{{ service.check_interval }}'
+{% endif %}
+{% if service.check_unit is defined %}
+	option check_unit '{{ service.check_unit }}'
+{% endif %}
+{% if service.force_interval is defined %}
+	option force_interval '{{ service.force_interval }}'
+{% endif %}
+{% if service.force_unit is defined %}
+	option force_unit '{{ service.force_unit }}'
+{% endif %}
+
+{% endfor %}

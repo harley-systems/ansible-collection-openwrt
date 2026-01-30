@@ -1,0 +1,191 @@
+---
+# IPSec/StrongSwan role defaults
+
+# =============================================================================
+# Packages
+# =============================================================================
+
+ipsec_packages:
+  - strongswan-default
+  - strongswan-mod-stroke
+  - strongswan-ipsec
+  - strongswan-mod-kdf
+  - iptables-mod-nat-extra
+  - vti
+  - kmod-ip-vti
+  - ip-full
+  - bash
+
+# =============================================================================
+# StrongSwan Global Settings
+# =============================================================================
+
+ipsec_charondebug: "ike 2, knl 2, cfg 2, net 2, esp 2, dmn 2, mgr 2"
+ipsec_uniqueids: true
+
+# IKE proposals (comma-separated list)
+ipsec_ike_default: >-
+  aes128-sha256-modp2048,
+  aes256-sha256-modp2048,
+  aes256-sha384-modp4096,
+  aes256gcm16-sha384-modp4096
+
+# ESP proposals (comma-separated list)
+ipsec_esp_default: >-
+  aes128-sha256,
+  aes256-sha256,
+  aes256-sha384,
+  aes256gcm16
+
+# DPD (Dead Peer Detection) settings
+ipsec_dpdaction: clear      # none, clear, hold, restart
+ipsec_dpddelay: 300s
+
+# Default authentication
+ipsec_leftauth: pubkey
+ipsec_rightauth: pubkey
+
+# =============================================================================
+# Certificates
+# =============================================================================
+
+# CA certificates to copy to /etc/ipsec.d/cacerts/
+# Example:
+# ipsec_ca_certs:
+#   - src: files/strongswanCert.der
+#     dest: strongswanCert.der
+#   - src: files/subCACert.der
+#     dest: subCACert.der
+ipsec_ca_certs: []
+
+# Host certificates to copy to /etc/ipsec.d/certs/
+# Example:
+# ipsec_host_certs:
+#   - src: files/vpnCert.der
+#     dest: vpnCert.der
+ipsec_host_certs: []
+
+# Private keys to copy to /etc/ipsec.d/private/
+# Example:
+# ipsec_private_keys:
+#   - src: files/vpnKey.der
+#     dest: vpnKey.der
+ipsec_private_keys: []
+
+# =============================================================================
+# Secrets Configuration
+# =============================================================================
+
+# RSA key for certificate authentication
+# Example: /etc/ipsec.d/private/vpnKey.der
+ipsec_rsa_key: ""
+
+# PSK secrets (for pre-shared key authentication)
+# Example:
+# ipsec_psk_secrets:
+#   - local: "192.168.1.1"
+#     remote: "203.0.113.50"
+#     secret: "{{ vault_ipsec_psk }}"
+ipsec_psk_secrets: []
+
+# =============================================================================
+# Connections
+# =============================================================================
+
+# Define your IPSec connections here
+# Each connection supports the following parameters:
+#
+# Connection basics:
+#   name          - Connection name (required)
+#   enabled       - auto setting: start, add, route, ignore (default: add)
+#   type          - tunnel or transport (default: tunnel)
+#   mark          - XFRM mark for policy matching
+#
+# Left side (local):
+#   left          - Local address (%any, IP, or %defaultroute)
+#   leftid        - Local identity (DN string)
+#   leftsubnet    - Local subnet(s) to expose
+#   leftcert      - Local certificate file
+#   leftsendcert  - When to send cert: always, ifasked, never
+#   leftsourceip  - Request virtual IP from peer (%config)
+#   leftupdown    - Updown script with parameters
+#
+# Right side (remote):
+#   right         - Remote address (%any, IP, hostname)
+#   rightid       - Remote identity (DN string)
+#   rightsubnet   - Remote subnet(s)
+#   rightcert     - Remote certificate file
+#   rightsourceip - Virtual IP pool for clients
+#   rightdns      - DNS servers for clients
+#   rightca       - Required CA for peer certificate
+#
+# Example connections:
+
+# Road-warrior responder (VPN gateway for mobile clients):
+# ipsec_connections:
+#   - name: road-warrior
+#     mark: 200
+#     type: tunnel
+#     left: "%any"
+#     leftid: "C=US, O=MyOrg, CN=vpn.example.com"
+#     leftsubnet: "0.0.0.0/0"
+#     leftcert: vpnCert.der
+#     leftsendcert: always
+#     leftupdown: "/etc/ipsec.d/ipsec-updown.sh -ln vpn-rw-%id -ll 10.42.255.254/32 -lr %vip/32 -m 200 -r %vip/32"
+#     right: "%any"
+#     rightsourceip: "10.42.0.0/16"
+#     rightdns: "8.8.8.8,2001:4860:4860::8888"
+#     rightca: "C=US, O=MyOrg, CN=MyOrg CA"
+
+# Site-to-site responder (accept connections from remote site):
+# ipsec_connections:
+#   - name: site-to-site-responder
+#     mark: 100
+#     type: tunnel
+#     left: "%any"
+#     leftsubnet: "192.168.1.0/24"
+#     leftcert: vpnCert.der
+#     leftsendcert: always
+#     leftupdown: "/etc/ipsec.d/ipsec-updown.sh -ln vpn-site -lr 169.254.71.2/30 -ll 169.254.71.1/30 -m 100 -r 10.0.0.0/24"
+#     right: "%any"
+#     rightca: "C=US, O=MyOrg, CN=MyOrg CA"
+#     rightsubnet: "10.0.0.0/24"
+#     rightid: "C=US, O=RemoteSite, CN=remote@example.com"
+
+# Site-to-site initiator (connect to remote VPN gateway):
+# ipsec_connections:
+#   - name: cloud-site
+#     enabled: start
+#     mark: 102
+#     type: tunnel
+#     leftcert: clientCert.der
+#     leftsubnet: "192.168.1.0/24"
+#     leftupdown: "/etc/ipsec.d/ipsec-updown.sh -ln vpn-cloud -ll 169.254.71.10/30 -lr 169.254.71.9/30 -m 102 -r 172.16.0.0/16"
+#     right: "vpn.remote-site.com"
+#     rightid: "C=US, O=RemoteSite, CN=vpn.remote-site.com"
+#     rightcert: remoteCert.der
+#     rightsubnet: "172.16.0.0/16"
+
+ipsec_connections: []
+
+# =============================================================================
+# Sysctl Settings
+# =============================================================================
+
+ipsec_sysctl_disable:
+  - net.ipv4.conf.all.accept_redirects
+  - net.ipv4.conf.all.send_redirects
+  - net.ipv4.conf.default.rp_filter
+  - net.ipv4.conf.default.accept_source_route
+  - net.ipv4.conf.default.send_redirects
+
+ipsec_sysctl_enable:
+  - net.ipv4.ip_forward
+  - net.ipv4.icmp_ignore_bogus_error_responses
+
+# =============================================================================
+# Autostart
+# =============================================================================
+
+# Add ipsec to rc.local for autostart
+ipsec_autostart: true

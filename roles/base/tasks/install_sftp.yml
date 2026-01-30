@@ -1,0 +1,7 @@
+---
+# Install SFTP server (required by Ansible for file transfers)
+
+- name: Install openssh-sftp-server
+  community.general.opkg:
+    name: openssh-sftp-server
+    state: present

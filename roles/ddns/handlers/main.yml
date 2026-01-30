@@ -1,0 +1,8 @@
+---
+# DDNS handlers
+
+- name: restart ddns
+  community.general.openwrt_init:
+    name: ddns
+    state: restarted
+  when: ddns_enabled | bool

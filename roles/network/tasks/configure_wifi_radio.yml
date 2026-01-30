@@ -1,0 +1,128 @@
+---
+# Configure a WiFi radio and its default interface
+
+# Radio hardware settings
+- name: "Configure {{ radio.name }} country"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: country
+    val: "{{ radio.country | default('US') }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.name }} channel"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: channel
+    val: "{{ radio.channel | default('auto') }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.name }} htmode"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: htmode
+    val: "{{ radio.htmode }}"
+  when: radio.htmode is defined
+  notify: reload wifi
+
+- name: "Configure {{ radio.name }} txpower"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: txpower
+    val: "{{ radio.txpower | default(20) }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.name }} legacy_rates"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: legacy_rates
+    val: "{{ '1' if radio.legacy_rates | default(false) else '0' }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.name }} distance"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: distance
+    val: "{{ radio.distance | default(20) }}"
+  notify: reload wifi
+
+- name: "Enable/disable {{ radio.name }}"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.name }}"
+    name: disabled
+    val: "{{ '0' if radio.enabled | default(true) else '1' }}"
+  notify: reload wifi
+
+# WiFi interface settings
+- name: "Configure {{ radio.interface }} device"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: device
+    val: "{{ radio.name }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} network"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: network
+    val: "{{ radio.network | default('lan') }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} mode"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: mode
+    val: "{{ radio.mode | default('ap') }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} SSID"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: ssid
+    val: "{{ radio.ssid }}"
+  when: radio.ssid is defined
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} encryption"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: encryption
+    val: "{{ radio.encryption | default('psk2') }}"
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} key"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: key
+    val: "{{ radio.key }}"
+  when: radio.key is defined
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} MAC address"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: macaddr
+    val: "{{ radio.macaddr }}"
+  when: radio.macaddr is defined
+  notify: reload wifi
+
+- name: "Configure {{ radio.interface }} hidden SSID"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: hidden
+    val: "{{ '1' if radio.hidden | default(false) else '0' }}"
+  notify: reload wifi

@@ -1,0 +1,52 @@
+---
+# DHCP/DNS role defaults
+
+# Local domain name
+dhcp_dns_domain: lan
+
+# LAN DHCP settings
+dhcp_dns_lan_enabled: true
+dhcp_dns_lan_interface: lan
+dhcp_dns_lan_start: 100      # First IP in DHCP range (offset from network)
+dhcp_dns_lan_limit: 150      # Number of addresses in pool
+# dhcp_dns_lan_leasetime: 12h  # Uncomment to explicitly set (OpenWRT default is 12h)
+
+# WAN DHCP (usually disabled)
+dhcp_dns_wan_enabled: false
+dhcp_dns_wan_interface: wan
+
+# DNS server to advertise (empty = router itself)
+dhcp_dns_server: ""
+
+# Static DHCP leases
+# Example:
+# dhcp_dns_static_leases:
+#   - name: myserver
+#     mac: "aa:bb:cc:dd:ee:ff"
+#     ip: "192.168.1.10"
+dhcp_dns_static_leases: []
+
+# DNS A records (hostname to IP)
+# Example:
+# dhcp_dns_hosts:
+#   - name: myserver
+#     ip: "192.168.1.10"
+#   - name: nas
+#     ip: "192.168.1.20"
+dhcp_dns_hosts: []
+
+# DNS CNAME records (alias to target)
+# Example:
+# dhcp_dns_cnames:
+#   - alias: www
+#     target: myserver.lan
+#   - alias: ftp
+#     target: nas.lan
+dhcp_dns_cnames: []
+
+# Additional DHCP options for LAN
+# Example:
+# dhcp_dns_lan_options:
+#   - "6,192.168.1.1"    # DNS server
+#   - "15,home.lan"       # Domain name
+dhcp_dns_lan_options: []

@@ -1,0 +1,53 @@
+---
+# Configure LAN interface
+
+- name: Configure LAN protocol
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_lan_interface }}"
+    name: proto
+    val: "{{ network_lan_proto }}"
+  notify: restart network
+
+- name: Configure LAN IP address
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_lan_interface }}"
+    name: ipaddr
+    val: "{{ network_lan_ipaddr }}"
+  notify: restart network
+
+- name: Configure LAN netmask
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_lan_interface }}"
+    name: netmask
+    val: "{{ network_lan_netmask }}"
+  notify: restart network
+
+- name: Configure LAN interface name
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_lan_interface }}"
+    name: ifname
+    val: "{{ network_lan_ifname }}"
+  when: network_lan_ifname is defined
+  notify: restart network
+
+- name: Configure LAN bridge type
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_lan_interface }}"
+    name: type
+    val: "{{ network_lan_type }}"
+  when: network_lan_type is defined
+  notify: restart network
+
+- name: Configure LAN DNS
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_lan_interface }}"
+    name: dns
+    val: "{{ network_lan_dns }}"
+  when: network_lan_dns is defined
+  notify: restart network

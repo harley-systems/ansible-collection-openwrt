@@ -1,0 +1,33 @@
+---
+# Configure a static DHCP lease
+
+- name: "Ensure static lease section exists: {{ lease.name }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ lease.name }}"
+    type: host
+  notify: restart dnsmasq
+
+- name: "Configure static lease IP: {{ lease.name }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ lease.name }}"
+    name: ip
+    val: "{{ lease.ip }}"
+  notify: restart dnsmasq
+
+- name: "Configure static lease MAC: {{ lease.name }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ lease.name }}"
+    name: mac
+    val: "{{ lease.mac }}"
+  notify: restart dnsmasq
+
+- name: "Configure static lease hostname: {{ lease.name }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ lease.name }}"
+    name: name
+    val: "{{ lease.name }}"
+  notify: restart dnsmasq

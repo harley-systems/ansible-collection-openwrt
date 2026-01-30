@@ -1,0 +1,31 @@
+---
+# ACME role defaults
+
+# Required variables (no defaults):
+# acme_email: "admin@example.com"
+# acme_domain: "*.home.example.com"
+
+# DNS provider for DNS-01 challenge
+# See https://github.com/acmesh-official/acme.sh/wiki/dnsapi for options
+acme_dns_provider: dns_cf  # Cloudflare
+
+# Provider credentials (required, provider-specific)
+# For Cloudflare:
+# acme_cf_token: "your-api-token"
+# acme_cf_zone_id: "your-zone-id"
+
+# Certificate options
+acme_key_type: ec-256  # ec-256, ec-384, rsa-2048, rsa-4096
+acme_use_staging: false  # Use Let's Encrypt staging for testing
+acme_debug: false
+
+# Certificate name (used in config and paths)
+acme_cert_name: "{{ acme_domain | replace('*', 'wildcard') | replace('.', '_') }}"
+
+# Configure uhttpd to use this certificate
+acme_configure_uhttpd: false
+
+# Paths where ACME stores certificates (auto-generated based on domain)
+# For ECC keys: /etc/acme/<domain>_ecc/
+# For RSA keys: /etc/acme/<domain>/
+acme_cert_dir: "/etc/acme/{{ acme_domain }}{{ '_ecc' if 'ec' in acme_key_type else '' }}"

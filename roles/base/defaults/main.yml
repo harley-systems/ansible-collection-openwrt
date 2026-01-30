@@ -1,0 +1,24 @@
+---
+# Base role defaults
+
+# Ansible user configuration
+base_ansible_user: ansible
+base_ansible_user_id: 1000
+base_ansible_user_groups: "adm,ansible,wheel"
+base_ansible_user_shell: /bin/ash
+base_ansible_user_home: /home/ansible
+
+# Required variables (no defaults - must be provided):
+# base_ansible_authorized_key: "ssh-rsa AAAA..."
+# base_ansible_password: "password for ansible user"
+
+# First-run credentials (for initial connection as root)
+# base_first_run_user: root
+# base_first_run_password: ""
+
+# Package installation options
+base_install_python: true
+base_install_pip: true
+base_install_sftp: true
+base_install_sudo: true
+base_update_packages: true

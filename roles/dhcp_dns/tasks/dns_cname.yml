@@ -1,0 +1,30 @@
+---
+# Configure a DNS CNAME record
+#
+# Expected cname structure:
+#   alias: the CNAME alias (e.g., "gitlab")
+#   target: the target hostname (e.g., "yellow.example.com")
+#   name: (optional) section name prefix, defaults to alias
+
+- name: "Ensure CNAME section exists: {{ cname.alias }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ (cname.name | default(cname.alias)) | replace('.', '_') | replace('-', '_') }}_cname"
+    type: cname
+  notify: restart dnsmasq
+
+- name: "Configure CNAME alias: {{ cname.alias }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ (cname.name | default(cname.alias)) | replace('.', '_') | replace('-', '_') }}_cname"
+    name: cname
+    val: "{{ cname.alias }}.{{ dhcp_dns_domain }}"
+  notify: restart dnsmasq
+
+- name: "Configure CNAME target: {{ cname.alias }}"
+  harley.openwrt.uci:
+    p: dhcp
+    s: "{{ (cname.name | default(cname.alias)) | replace('.', '_') | replace('-', '_') }}_cname"
+    name: target
+    val: "{{ cname.target }}"
+  notify: restart dnsmasq

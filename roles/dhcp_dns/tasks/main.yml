@@ -1,0 +1,122 @@
+---
+# DHCP/DNS role - Configure dnsmasq DHCP server and DNS
+
+# WAN DHCP configuration (typically disabled)
+- name: Ensure WAN DHCP section exists
+  harley.openwrt.uci:
+    p: dhcp
+    s: wan
+    type: dhcp
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_wan]
+
+- name: Configure WAN DHCP interface
+  harley.openwrt.uci:
+    p: dhcp
+    s: wan
+    name: interface
+    val: "{{ dhcp_dns_wan_interface }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_wan]
+
+- name: Disable DHCP on WAN
+  harley.openwrt.uci:
+    p: dhcp
+    s: wan
+    name: ignore
+    val: "{{ '0' if dhcp_dns_wan_enabled else '1' }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_wan]
+
+# LAN DHCP configuration
+- name: Ensure LAN DHCP section exists
+  harley.openwrt.uci:
+    p: dhcp
+    s: lan
+    type: dhcp
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_lan]
+
+- name: Configure LAN DHCP interface
+  harley.openwrt.uci:
+    p: dhcp
+    s: lan
+    name: interface
+    val: "{{ dhcp_dns_lan_interface }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_lan]
+
+- name: Configure LAN DHCP range start
+  harley.openwrt.uci:
+    p: dhcp
+    s: lan
+    name: start
+    val: "{{ dhcp_dns_lan_start }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_lan]
+
+- name: Configure LAN DHCP range limit
+  harley.openwrt.uci:
+    p: dhcp
+    s: lan
+    name: limit
+    val: "{{ dhcp_dns_lan_limit }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_lan]
+
+- name: Configure LAN DHCP lease time
+  harley.openwrt.uci:
+    p: dhcp
+    s: lan
+    name: leasetime
+    val: "{{ dhcp_dns_lan_leasetime }}"
+  notify: restart dnsmasq
+  when: dhcp_dns_lan_leasetime is defined
+  tags: [dhcp_dns, dhcp_lan]
+
+# DNS domain configuration
+- name: Configure local domain name
+  harley.openwrt.uci:
+    p: dhcp
+    type: dnsmasq
+    index: 0
+    name: domain
+    val: "{{ dhcp_dns_domain }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dns_domain]
+
+# DHCP options
+- name: Configure LAN DHCP options
+  harley.openwrt.uci:
+    p: dhcp
+    s: lan
+    name: dhcp_option
+    val: "{{ item }}"
+    item: list
+  loop: "{{ dhcp_dns_lan_options }}"
+  notify: restart dnsmasq
+  tags: [dhcp_dns, dhcp_options]
+
+# Static leases
+- name: Configure static DHCP leases
+  ansible.builtin.include_tasks: static_lease.yml
+  loop: "{{ dhcp_dns_static_leases }}"
+  loop_control:
+    loop_var: lease
+  tags: [dhcp_dns, dhcp_static]
+
+# DNS A records
+- name: Configure DNS host entries
+  ansible.builtin.include_tasks: dns_host.yml
+  loop: "{{ dhcp_dns_hosts }}"
+  loop_control:
+    loop_var: host
+  tags: [dhcp_dns, dns_hosts]
+
+# DNS CNAME records
+- name: Configure DNS CNAME entries
+  ansible.builtin.include_tasks: dns_cname.yml
+  loop: "{{ dhcp_dns_cnames }}"
+  loop_control:
+    loop_var: cname
+  tags: [dhcp_dns, dns_cnames]

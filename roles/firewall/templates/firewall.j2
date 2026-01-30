@@ -1,0 +1,289 @@
+# OpenWRT Firewall Configuration
+# Managed by Ansible - do not edit manually
+
+# =============================================================================
+# Default Policies
+# =============================================================================
+
+config defaults
+	option syn_flood '{{ "1" if firewall_syn_flood else "0" }}'
+	option input '{{ firewall_input }}'
+	option output '{{ firewall_output }}'
+	option forward '{{ firewall_forward }}'
+
+# =============================================================================
+# Zones
+# =============================================================================
+
+{% for zone in firewall_zones %}
+config zone
+	option name '{{ zone.name }}'
+	option input '{{ zone.input | default("ACCEPT") }}'
+	option output '{{ zone.output | default("ACCEPT") }}'
+	option forward '{{ zone.forward | default("REJECT") }}'
+{% if zone.masq | default(false) %}
+	option masq '1'
+{% endif %}
+{% if zone.mtu_fix | default(false) %}
+	option mtu_fix '1'
+{% endif %}
+{% if zone.network is defined %}
+	option network '{{ zone.network }}'
+{% endif %}
+{% if zone.devices is defined %}
+{% for device in zone.devices %}
+	list device '{{ device }}'
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% for zone in firewall_extra_zones %}
+config zone
+	option name '{{ zone.name }}'
+	option input '{{ zone.input | default("ACCEPT") }}'
+	option output '{{ zone.output | default("ACCEPT") }}'
+	option forward '{{ zone.forward | default("ACCEPT") }}'
+{% if zone.masq | default(false) %}
+	option masq '1'
+{% endif %}
+{% if zone.mtu_fix | default(false) %}
+	option mtu_fix '1'
+{% endif %}
+{% if zone.network is defined %}
+	option network '{{ zone.network }}'
+{% endif %}
+{% if zone.devices is defined %}
+{% for device in zone.devices %}
+	list device '{{ device }}'
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% if firewall_ipsec_enabled %}
+config zone
+	option name 'vpn'
+	option input 'ACCEPT'
+	option output 'ACCEPT'
+	option forward 'ACCEPT'
+	option mtu_fix '1'
+{% for device in firewall_ipsec_devices %}
+	list device '{{ device }}'
+{% endfor %}
+
+{% endif %}
+# =============================================================================
+# Forwarding Rules
+# =============================================================================
+
+{% for fwd in firewall_forwardings %}
+config forwarding
+	option src '{{ fwd.src }}'
+	option dest '{{ fwd.dest }}'
+
+{% endfor %}
+{% for fwd in firewall_extra_forwardings %}
+config forwarding
+	option src '{{ fwd.src }}'
+	option dest '{{ fwd.dest }}'
+
+{% endfor %}
+{% if firewall_ipsec_enabled %}
+config forwarding
+	option src 'vpn'
+	option dest 'lan'
+
+config forwarding
+	option src 'lan'
+	option dest 'vpn'
+
+config forwarding
+	option src 'vpn'
+	option dest 'wan'
+
+{% endif %}
+# =============================================================================
+# Standard Rules
+# =============================================================================
+
+{% if firewall_include_standard_rules %}
+config rule
+	option name 'Allow-DHCP-Renew'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '68'
+	option target 'ACCEPT'
+	option family 'ipv4'
+
+config rule
+	option name 'Allow-Ping'
+	option src 'wan'
+	option proto 'icmp'
+	option icmp_type 'echo-request'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IGMP'
+	option src 'wan'
+	option proto 'igmp'
+	option family 'ipv4'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-DHCPv6'
+	option src 'wan'
+	option proto 'udp'
+	option src_ip 'fc00::/6'
+	option dest_ip 'fc00::/6'
+	option dest_port '546'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-MLD'
+	option src 'wan'
+	option proto 'icmp'
+	option src_ip 'fe80::/10'
+	list icmp_type '130/0'
+	list icmp_type '131/0'
+	list icmp_type '132/0'
+	list icmp_type '143/0'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Input'
+	option src 'wan'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	list icmp_type 'router-solicitation'
+	list icmp_type 'neighbour-solicitation'
+	list icmp_type 'router-advertisement'
+	list icmp_type 'neighbour-advertisement'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-ICMPv6-Forward'
+	option src 'wan'
+	option dest '*'
+	option proto 'icmp'
+	list icmp_type 'echo-request'
+	list icmp_type 'echo-reply'
+	list icmp_type 'destination-unreachable'
+	list icmp_type 'packet-too-big'
+	list icmp_type 'time-exceeded'
+	list icmp_type 'bad-header'
+	list icmp_type 'unknown-header-type'
+	option limit '1000/sec'
+	option family 'ipv6'
+	option target 'ACCEPT'
+
+{% endif %}
+# =============================================================================
+# IPSec Rules
+# =============================================================================
+
+{% if firewall_ipsec_enabled %}
+config rule
+	option name 'Allow-IPSec-ESP'
+	option src 'wan'
+	option proto 'esp'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IPSec-AH'
+	option src 'wan'
+	option proto 'ah'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IPSec-ISAKMP'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '500'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-IPSec-NAT-T'
+	option src 'wan'
+	option proto 'udp'
+	option dest_port '4500'
+	option target 'ACCEPT'
+
+{% if firewall_vpn_subnet is defined %}
+config rule
+	option name 'Allow-VPN-Forward'
+	option src '*'
+	option src_ip '{{ firewall_vpn_subnet }}'
+	option dest 'lan'
+	option target 'ACCEPT'
+	option enabled '1'
+
+{% endif %}
+{% endif %}
+# =============================================================================
+# Custom Rules
+# =============================================================================
+
+{% for rule in firewall_rules %}
+config rule
+	option name '{{ rule.name }}'
+{% if rule.enabled is defined %}
+	option enabled '{{ "1" if rule.enabled else "0" }}'
+{% endif %}
+{% if rule.src is defined %}
+	option src '{{ rule.src }}'
+{% endif %}
+{% if rule.src_ip is defined %}
+	option src_ip '{{ rule.src_ip }}'
+{% endif %}
+{% if rule.src_port is defined %}
+	option src_port '{{ rule.src_port }}'
+{% endif %}
+{% if rule.dest is defined %}
+	option dest '{{ rule.dest }}'
+{% endif %}
+{% if rule.dest_ip is defined %}
+	option dest_ip '{{ rule.dest_ip }}'
+{% endif %}
+{% if rule.dest_port is defined %}
+	option dest_port '{{ rule.dest_port }}'
+{% endif %}
+{% if rule.proto is defined %}
+	option proto '{{ rule.proto }}'
+{% endif %}
+{% if rule.family is defined %}
+	option family '{{ rule.family }}'
+{% endif %}
+{% if rule.icmp_type is defined %}
+{% if rule.icmp_type is string %}
+	option icmp_type '{{ rule.icmp_type }}'
+{% else %}
+{% for icmp in rule.icmp_type %}
+	list icmp_type '{{ icmp }}'
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if rule.limit is defined %}
+	option limit '{{ rule.limit }}'
+{% endif %}
+	option target '{{ rule.target }}'
+
+{% endfor %}
+# =============================================================================
+# Includes
+# =============================================================================
+
+{% if firewall_include_user %}
+config include
+	option path '{{ firewall_user_include }}'
+
+{% endif %}

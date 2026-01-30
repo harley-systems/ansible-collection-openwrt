@@ -1,0 +1,47 @@
+---
+# DDNS role - Dynamic DNS client configuration
+
+- name: Install DDNS packages
+  community.general.opkg:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - ddns-scripts
+    - luci-app-ddns
+  tags: [ddns, ddns_packages]
+
+- name: Install provider-specific DDNS scripts
+  community.general.opkg:
+    name: "ddns-scripts-{{ item.provider | regex_replace('\\.com.*', '') | regex_replace('-v[0-9]+', '') }}"
+    state: present
+  loop: "{{ ddns_services }}"
+  when: ddns_services | length > 0
+  failed_when: false  # Some providers don't need extra scripts
+  tags: [ddns, ddns_packages]
+
+- name: Deploy DDNS configuration
+  ansible.builtin.template:
+    src: ddns.j2
+    dest: /etc/config/ddns
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart ddns
+  tags: [ddns, ddns_config]
+
+- name: Enable and start DDNS service
+  community.general.openwrt_init:
+    name: ddns
+    state: started
+    enabled: true
+  when: ddns_enabled | bool and ddns_services | length > 0
+  tags: [ddns, ddns_service]
+
+- name: Stop and disable DDNS service
+  community.general.openwrt_init:
+    name: ddns
+    state: stopped
+    enabled: false
+  when: not (ddns_enabled | bool) or ddns_services | length == 0
+  failed_when: false  # May not be running
+  tags: [ddns, ddns_service]

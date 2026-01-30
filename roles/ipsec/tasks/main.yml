@@ -1,0 +1,185 @@
+---
+# IPSec/StrongSwan role - Configure OpenWRT IPSec VPN
+
+# =============================================================================
+# Install Packages
+# =============================================================================
+
+- name: Install StrongSwan and dependencies
+  opkg:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ipsec_packages }}"
+  notify: restart ipsec
+  tags: [ipsec, ipsec_packages]
+
+# =============================================================================
+# Create Directories
+# =============================================================================
+
+- name: Ensure IPSec directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop:
+    - /etc/ipsec.d
+    - /etc/ipsec.d/private
+    - /etc/ipsec.d/cacerts
+    - /etc/ipsec.d/certs
+  tags: [ipsec, ipsec_dirs]
+
+- name: Ensure strongswan.d directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop:
+    - /etc/strongswan.d
+    - /etc/strongswan.d/charon
+  tags: [ipsec, ipsec_dirs]
+
+# =============================================================================
+# Create Symlinks
+# =============================================================================
+
+- name: Create symbolic link for ip tool
+  ansible.builtin.file:
+    src: /sbin/ip
+    dest: /usr/sbin/ip
+    state: link
+  tags: [ipsec, ipsec_links]
+
+# =============================================================================
+# Deploy Certificates
+# =============================================================================
+
+- name: Copy CA certificates
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/ipsec.d/cacerts/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0640"
+  loop: "{{ ipsec_ca_certs }}"
+  notify: restart ipsec
+  when: ipsec_ca_certs | length > 0
+  tags: [ipsec, ipsec_certs]
+
+- name: Copy host certificates
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/ipsec.d/certs/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0640"
+  loop: "{{ ipsec_host_certs }}"
+  notify: restart ipsec
+  when: ipsec_host_certs | length > 0
+  tags: [ipsec, ipsec_certs]
+
+- name: Copy private keys
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/ipsec.d/private/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0600"
+  loop: "{{ ipsec_private_keys }}"
+  notify: restart ipsec
+  when: ipsec_private_keys | length > 0
+  tags: [ipsec, ipsec_certs]
+
+# =============================================================================
+# Deploy Updown Script
+# =============================================================================
+
+- name: Copy IPSec updown script
+  ansible.builtin.copy:
+    src: ipsec-updown.sh
+    dest: /etc/ipsec.d/ipsec-updown.sh
+    owner: root
+    group: root
+    mode: "0750"
+  notify: restart ipsec
+  tags: [ipsec, ipsec_updown]
+
+# =============================================================================
+# Deploy Configuration
+# =============================================================================
+
+- name: Deploy ipsec.conf
+  ansible.builtin.template:
+    src: ipsec.conf.j2
+    dest: /etc/ipsec.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: restart ipsec
+  tags: [ipsec, ipsec_config]
+
+- name: Deploy ipsec.secrets
+  ansible.builtin.template:
+    src: ipsec.secrets.j2
+    dest: /etc/ipsec.secrets
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart ipsec
+  tags: [ipsec, ipsec_config]
+
+- name: Deploy strongswan.conf
+  ansible.builtin.template:
+    src: strongswan.conf.j2
+    dest: /etc/strongswan.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: restart ipsec
+  tags: [ipsec, ipsec_config]
+
+# =============================================================================
+# Configure Sysctl
+# =============================================================================
+
+- name: Configure sysctl - disable parameters
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "0"
+    state: present
+  loop: "{{ ipsec_sysctl_disable }}"
+  tags: [ipsec, ipsec_sysctl]
+
+- name: Configure sysctl - enable parameters
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    state: present
+  loop: "{{ ipsec_sysctl_enable }}"
+  tags: [ipsec, ipsec_sysctl]
+
+# =============================================================================
+# Autostart
+# =============================================================================
+
+- name: Check if ipsec start is in rc.local
+  ansible.builtin.command: grep "^ipsec" /etc/rc.local
+  register: ipsec_rc_check
+  ignore_errors: true
+  changed_when: false
+  when: ipsec_autostart
+  tags: [ipsec, ipsec_autostart]
+
+- name: Add ipsec to rc.local
+  ansible.builtin.lineinfile:
+    path: /etc/rc.local
+    line: ipsec start
+    insertbefore: "^exit 0$"
+  when:
+    - ipsec_autostart
+    - ipsec_rc_check.rc != 0
+  tags: [ipsec, ipsec_autostart]

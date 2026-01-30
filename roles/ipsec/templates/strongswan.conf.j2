@@ -1,0 +1,11 @@
+# strongswan.conf - StrongSwan configuration file
+# Managed by Ansible - do not edit manually
+
+charon {
+    load_modular=yes
+    plugins {
+        include strongswan.d/charon/*.conf
+    }
+    include strongswan.d/charon-logging.conf
+    include strongswan.d/charon.conf
+}

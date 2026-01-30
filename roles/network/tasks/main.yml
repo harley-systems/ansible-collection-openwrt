@@ -1,0 +1,20 @@
+---
+# Network role - Configure WAN, LAN, and WiFi
+
+- name: Configure WAN interface
+  ansible.builtin.include_tasks: configure_wan.yml
+  when: network_wan_enabled | bool
+  tags: [network, network_wan]
+
+- name: Configure LAN interface
+  ansible.builtin.include_tasks: configure_lan.yml
+  when: network_lan_enabled | bool
+  tags: [network, network_lan]
+
+- name: Configure WiFi radios
+  ansible.builtin.include_tasks: configure_wifi_radio.yml
+  loop: "{{ network_wifi_radios }}"
+  loop_control:
+    loop_var: radio
+  when: network_wifi_enabled | bool and network_wifi_radios | length > 0
+  tags: [network, network_wifi]

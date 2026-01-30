@@ -1,0 +1,26 @@
+---
+# WebUI role defaults
+
+# Certificate configuration
+# Set to true to copy certificate files from controller
+webui_copy_certs: false
+
+# Paths on the router where certs will be stored/read from
+webui_cert_path: /etc/uhttpd.crt
+webui_key_path: /etc/uhttpd.key
+
+# Source paths on controller (only used if webui_copy_certs: true)
+# webui_cert_src: "files/etc/router.crt"
+# webui_key_src: "files/etc/router.key"
+
+# Listen configuration
+# IP address to bind to (use 0.0.0.0 for all interfaces)
+webui_listen_ip: "{{ lan_ip_address | default('0.0.0.0') }}"
+webui_http_port: 80
+webui_https_port: 443
+
+# Redirect HTTP to HTTPS
+webui_redirect_https: true
+
+# Install LuCI web interface
+webui_install_luci: true

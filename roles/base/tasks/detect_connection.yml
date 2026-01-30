@@ -1,0 +1,29 @@
+---
+# Detect if we can connect with ansible user or need first-run credentials
+
+- name: Check if SSH connection is possible with configured user
+  ansible.builtin.command: >
+    ssh -o User={{ ansible_user }}
+    -o ConnectTimeout=10
+    -o PreferredAuthentications=publickey
+    -o PubkeyAuthentication=yes
+    {{ ansible_host }} echo "Worked"
+  register: _base_ssh_check
+  connection: local
+  ignore_errors: true
+  changed_when: false
+
+- name: Switch to first-run credentials if SSH key auth failed
+  ansible.builtin.set_fact:
+    ansible_user: "{{ base_first_run_user }}"
+    ansible_password: "{{ base_first_run_password }}"
+    ansible_ssh_pass: "{{ base_first_run_password }}"
+  when:
+    - _base_ssh_check.failed
+    - base_first_run_user is defined
+    - base_first_run_password is defined
+
+- name: Enable become if SSH key auth succeeded
+  ansible.builtin.set_fact:
+    ansible_become: true
+  when: not _base_ssh_check.failed

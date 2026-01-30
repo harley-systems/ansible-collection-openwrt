@@ -1,0 +1,6 @@
+---
+# IPSec role handlers
+
+- name: restart ipsec
+  ansible.builtin.shell: ipsec restart || ipsec start
+  changed_when: true

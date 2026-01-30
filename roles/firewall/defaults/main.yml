@@ -1,0 +1,119 @@
+---
+# Firewall role defaults
+
+# =============================================================================
+# Default Policies
+# =============================================================================
+
+firewall_syn_flood: true
+firewall_input: ACCEPT
+firewall_output: ACCEPT
+firewall_forward: REJECT
+
+# =============================================================================
+# Zones
+# =============================================================================
+
+firewall_zones:
+  - name: lan
+    input: ACCEPT
+    output: ACCEPT
+    forward: ACCEPT
+    network: lan
+
+  - name: wan
+    input: REJECT
+    output: ACCEPT
+    forward: REJECT
+    masq: true
+    mtu_fix: true
+    network: "wan wan6"
+
+# Additional zones (e.g., VPN, guest)
+# Example:
+# firewall_extra_zones:
+#   - name: vpn
+#     input: ACCEPT
+#     output: ACCEPT
+#     forward: ACCEPT
+#     mtu_fix: true
+#     devices:
+#       - "vpn-*"
+#   - name: guest
+#     input: REJECT
+#     output: ACCEPT
+#     forward: REJECT
+#     network: guest
+firewall_extra_zones: []
+
+# =============================================================================
+# Forwarding Rules
+# =============================================================================
+
+firewall_forwardings:
+  - src: lan
+    dest: wan
+
+# Additional forwardings
+# Example:
+# firewall_extra_forwardings:
+#   - src: vpn
+#     dest: lan
+#   - src: lan
+#     dest: vpn
+firewall_extra_forwardings: []
+
+# =============================================================================
+# Standard Rules (OpenWRT defaults)
+# =============================================================================
+
+# Include standard OpenWRT rules
+firewall_include_standard_rules: true
+
+# =============================================================================
+# Custom Rules
+# =============================================================================
+
+# Additional firewall rules
+# Example:
+# firewall_rules:
+#   - name: Allow-SSH
+#     src: wan
+#     proto: tcp
+#     dest_port: 22
+#     target: ACCEPT
+#
+#   - name: Allow-HTTP
+#     src: wan
+#     proto: tcp
+#     dest_port: 80
+#     target: ACCEPT
+#
+#   - name: Allow-VPN-Forward
+#     src: "*"
+#     src_ip: "10.42.0.0/16"
+#     dest: lan
+#     target: ACCEPT
+firewall_rules: []
+
+# =============================================================================
+# IPSec/VPN Rules
+# =============================================================================
+
+# Enable IPSec firewall rules
+firewall_ipsec_enabled: false
+
+# IPSec VPN zone devices pattern
+firewall_ipsec_devices:
+  - "vpn-*"
+
+# VPN subnet to allow forwarding from
+# firewall_vpn_subnet: "10.42.0.0/16"
+
+# =============================================================================
+# Includes
+# =============================================================================
+
+# Custom firewall script
+firewall_user_include: /etc/firewall.user
+firewall_include_user: true

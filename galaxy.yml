@@ -1,0 +1,32 @@
+namespace: harley
+name: openwrt
+version: 0.1.0
+readme: README.md
+authors:
+  - Aharon Haravon <aharon@harley.systems>
+description: Ansible collection for OpenWRT router configuration in home/office environments. Includes VPN (IPsec/StrongSwan), ACME/Let's Encrypt, DDNS, firewall, WiFi, and DHCP/DNS management.
+license:
+  - MIT
+license_file: LICENSE
+tags:
+  - openwrt
+  - router
+  - homelab
+  - vpn
+  - ipsec
+  - strongswan
+  - acme
+  - letsencrypt
+  - firewall
+  - wifi
+  - ddns
+  - networking
+dependencies: {}
+repository: https://github.com/harley-systems/ansible-collection-openwrt
+documentation: https://github.com/harley-systems/ansible-collection-openwrt
+homepage: https://github.com/harley-systems/ansible-collection-openwrt
+issues: https://github.com/harley-systems/ansible-collection-openwrt/issues
+build_ignore:
+  - .git
+  - .gitignore
+  - '*.tar.gz'

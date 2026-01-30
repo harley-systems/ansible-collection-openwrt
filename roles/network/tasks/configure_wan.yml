@@ -1,0 +1,93 @@
+---
+# Configure WAN interface
+
+- name: Configure WAN protocol
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: proto
+    val: "{{ network_wan_proto }}"
+  notify: restart network
+
+- name: Configure WAN interface name
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: ifname
+    val: "{{ network_wan_ifname }}"
+  when: network_wan_ifname is defined
+  notify: restart network
+
+# PPPoE configuration
+- name: Configure WAN PPPoE username
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: username
+    val: "{{ network_wan_username }}"
+  when: network_wan_proto == 'pppoe' and network_wan_username is defined
+  notify: restart network
+
+- name: Configure WAN PPPoE password
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: password
+    val: "{{ network_wan_password }}"
+  when: network_wan_proto == 'pppoe' and network_wan_password is defined
+  notify: restart network
+
+- name: Configure WAN PPPoE keepalive
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: keepalive
+    val: "{{ network_wan_keepalive }}"
+  when: network_wan_proto == 'pppoe'
+  notify: restart network
+
+# Static IP configuration
+- name: Configure WAN static IP address
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: ipaddr
+    val: "{{ network_wan_ipaddr }}"
+  when: network_wan_proto == 'static' and network_wan_ipaddr is defined
+  notify: restart network
+
+- name: Configure WAN static netmask
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: netmask
+    val: "{{ network_wan_netmask }}"
+  when: network_wan_proto == 'static' and network_wan_netmask is defined
+  notify: restart network
+
+- name: Configure WAN static gateway
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: gateway
+    val: "{{ network_wan_gateway }}"
+  when: network_wan_proto == 'static' and network_wan_gateway is defined
+  notify: restart network
+
+- name: Configure WAN DNS servers
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: dns
+    val: "{{ network_wan_dns }}"
+  when: network_wan_dns is defined
+  notify: restart network
+
+# IPv6 configuration
+- name: Configure WAN IPv6
+  harley.openwrt.uci:
+    p: network
+    s: "{{ network_wan_interface }}"
+    name: ipv6
+    val: "{{ network_wan_ipv6 }}"
+  notify: restart network
