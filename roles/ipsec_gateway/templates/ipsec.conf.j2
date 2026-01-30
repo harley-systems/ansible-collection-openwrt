@@ -1,0 +1,82 @@
+# ipsec.conf - StrongSwan IPsec configuration file
+# Managed by Ansible - do not edit manually
+
+config setup
+    charondebug="{{ ipsec_charondebug }}"
+    uniqueids = {{ "yes" if ipsec_uniqueids else "no" }}
+
+conn %default
+    keyexchange=ikev2
+    ike={{ ipsec_ike_default | regex_replace('\s+', '') }}
+    esp={{ ipsec_esp_default | regex_replace('\s+', '') }}
+
+    dpdaction={{ ipsec_dpdaction }}
+    dpddelay={{ ipsec_dpddelay }}
+
+    leftauth={{ ipsec_leftauth }}
+    rightauth={{ ipsec_rightauth }}
+
+    auto=add
+
+{% for conn in ipsec_connections %}
+# =============================================================================
+# {{ conn.name }}
+# =============================================================================
+conn {{ conn.name }}
+{% if conn.enabled is defined %}
+    auto={{ conn.enabled }}
+{% endif %}
+{% if conn.mark is defined %}
+    mark={{ conn.mark }}
+{% endif %}
+{% if conn.type is defined %}
+    type={{ conn.type }}
+{% endif %}
+
+    # Left (local) side
+{% if conn.left is defined %}
+    left={{ conn.left }}
+{% endif %}
+{% if conn.leftid is defined %}
+    leftid="{{ conn.leftid }}"
+{% endif %}
+{% if conn.leftsubnet is defined %}
+    leftsubnet={{ conn.leftsubnet }}
+{% endif %}
+{% if conn.leftcert is defined %}
+    leftcert={{ conn.leftcert }}
+{% endif %}
+{% if conn.leftsendcert is defined %}
+    leftsendcert={{ conn.leftsendcert }}
+{% endif %}
+{% if conn.leftsourceip is defined %}
+    leftsourceip={{ conn.leftsourceip }}
+{% endif %}
+{% if conn.leftupdown is defined %}
+    leftupdown="{{ conn.leftupdown }}"
+{% endif %}
+
+    # Right (remote) side
+{% if conn.right is defined %}
+    right={{ conn.right }}
+{% endif %}
+{% if conn.rightid is defined %}
+    rightid="{{ conn.rightid }}"
+{% endif %}
+{% if conn.rightsubnet is defined %}
+    rightsubnet={{ conn.rightsubnet }}
+{% endif %}
+{% if conn.rightcert is defined %}
+    rightcert={{ conn.rightcert }}
+{% endif %}
+{% if conn.rightsourceip is defined %}
+    rightsourceip={{ conn.rightsourceip }}
+{% endif %}
+{% if conn.rightdns is defined %}
+    rightdns={{ conn.rightdns }}
+{% endif %}
+{% if conn.rightca is defined %}
+    rightca="{{ conn.rightca }}"
+{% endif %}
+
+{% endfor %}

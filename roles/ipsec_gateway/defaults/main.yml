@@ -1,0 +1,115 @@
+---
+# IPSec Gateway role defaults (Linux/Ubuntu StrongSwan VPN gateway)
+#
+# This role shares the same IPSec variable interface as the `ipsec` role
+# (for OpenWRT), but targets Ubuntu/Debian hosts with systemd, apt, and
+# AppArmor.
+#
+# The ipsec_* variables are intentionally shared with the `ipsec` role
+# so playbooks can use the same variable names for either platform.
+# noqa: var-naming[no-role-prefix]
+
+# =============================================================================
+# Packages (Ubuntu/Debian)
+# =============================================================================
+
+ipsec_gateway_packages:
+  - strongswan
+  - strongswan-pki
+  - strongswan-swanctl
+  - libcharon-extra-plugins
+  - libcharon-extauth-plugins
+
+ipsec_gateway_haveged: true
+
+# =============================================================================
+# StrongSwan Global Settings
+# =============================================================================
+
+ipsec_charondebug: "ike 2, knl 2, cfg 2, net 2, esp 2, dmn 2, mgr 2"
+ipsec_uniqueids: true
+
+# IKE proposals (comma-separated list)
+ipsec_ike_default: >-
+  aes128-sha256-modp2048,
+  aes256-sha256-modp2048,
+  aes256-sha384-modp4096,
+  aes256gcm16-sha384-modp4096
+
+# ESP proposals (comma-separated list)
+ipsec_esp_default: >-
+  aes128-sha256,
+  aes256-sha256,
+  aes256-sha384,
+  aes256gcm16
+
+# DPD (Dead Peer Detection) settings
+ipsec_dpdaction: clear      # none, clear, hold, restart
+ipsec_dpddelay: 300s
+
+# Default authentication
+ipsec_leftauth: pubkey
+ipsec_rightauth: pubkey
+
+# =============================================================================
+# Certificates
+# =============================================================================
+
+# CA certificates to copy to /etc/ipsec.d/cacerts/
+ipsec_ca_certs: []
+
+# Host certificates to copy to /etc/ipsec.d/certs/
+ipsec_host_certs: []
+
+# Private keys to copy to /etc/ipsec.d/private/
+ipsec_private_keys: []
+
+# =============================================================================
+# Secrets Configuration
+# =============================================================================
+
+# RSA key for certificate authentication
+ipsec_rsa_key: ""
+
+# PSK secrets (for pre-shared key authentication)
+ipsec_psk_secrets: []
+
+# =============================================================================
+# Connections
+# =============================================================================
+
+# Same interface as the ipsec role - see roles/ipsec/defaults/main.yml
+# for full documentation of connection parameters.
+ipsec_connections: []
+
+# =============================================================================
+# Sysctl Settings
+# =============================================================================
+
+ipsec_sysctl_disable:
+  - net.ipv4.conf.all.accept_redirects
+  - net.ipv4.conf.all.send_redirects
+  - net.ipv4.conf.default.rp_filter
+  - net.ipv4.conf.default.accept_source_route
+  - net.ipv4.conf.default.send_redirects
+
+ipsec_sysctl_enable:
+  - net.ipv4.ip_forward
+  - net.ipv4.icmp_ignore_bogus_error_responses
+
+# =============================================================================
+# Charon Configuration
+# =============================================================================
+
+# Charon logging - file log path
+ipsec_gateway_charon_log_path: /var/log/charon.log
+
+# Charon logging - default level (0-4, -1 to disable)
+ipsec_gateway_charon_log_default: 1
+
+# =============================================================================
+# AppArmor
+# =============================================================================
+
+# Configure AppArmor to allow charon to write its log file
+ipsec_gateway_apparmor: true

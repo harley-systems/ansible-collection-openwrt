@@ -1,0 +1,236 @@
+---
+# IPSec Gateway role - Configure Linux/Ubuntu StrongSwan VPN gateway
+
+# =============================================================================
+# Install Packages
+# =============================================================================
+
+- name: Install StrongSwan and dependencies
+  ansible.builtin.apt:
+    name: "{{ ipsec_gateway_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_packages]
+
+- name: Install haveged for entropy
+  ansible.builtin.apt:
+    name: haveged
+    state: present
+  notify: Start haveged
+  when: ipsec_gateway_haveged
+  tags: [ipsec_gateway, ipsec_gateway_packages]
+
+# =============================================================================
+# Create Directories
+# =============================================================================
+
+- name: Ensure IPSec directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop:
+    - /etc/ipsec.d
+    - /etc/ipsec.d/private
+    - /etc/ipsec.d/cacerts
+    - /etc/ipsec.d/certs
+    - /etc/ipsec.d/crls
+  tags: [ipsec_gateway, ipsec_gateway_dirs]
+
+- name: Ensure strongswan.d directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop:
+    - /etc/strongswan.d
+    - /etc/strongswan.d/charon
+  tags: [ipsec_gateway, ipsec_gateway_dirs]
+
+# =============================================================================
+# Deploy Certificates
+# =============================================================================
+
+- name: Copy CA certificates
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/ipsec.d/cacerts/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0640"
+  loop: "{{ ipsec_ca_certs }}"
+  notify: Restart strongswan
+  when: ipsec_ca_certs | length > 0
+  tags: [ipsec_gateway, ipsec_gateway_certs]
+
+- name: Copy host certificates
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/ipsec.d/certs/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0640"
+  loop: "{{ ipsec_host_certs }}"
+  notify: Restart strongswan
+  when: ipsec_host_certs | length > 0
+  tags: [ipsec_gateway, ipsec_gateway_certs]
+
+- name: Copy private keys
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/ipsec.d/private/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "0600"
+  loop: "{{ ipsec_private_keys }}"
+  notify: Restart strongswan
+  when: ipsec_private_keys | length > 0
+  tags: [ipsec_gateway, ipsec_gateway_certs]
+
+# =============================================================================
+# Deploy Updown Script
+# =============================================================================
+
+- name: Copy IPSec updown script
+  ansible.builtin.copy:
+    src: ipsec-updown.sh
+    dest: /etc/ipsec.d/ipsec-updown.sh
+    owner: root
+    group: root
+    mode: "0750"
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_updown]
+
+# =============================================================================
+# Deploy Configuration
+# =============================================================================
+
+- name: Deploy ipsec.conf
+  ansible.builtin.template:
+    src: ipsec.conf.j2
+    dest: /etc/ipsec.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_config]
+
+- name: Deploy ipsec.secrets
+  ansible.builtin.template:
+    src: ipsec.secrets.j2
+    dest: /etc/ipsec.secrets
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_config]
+
+- name: Deploy strongswan.conf
+  ansible.builtin.template:
+    src: strongswan.conf.j2
+    dest: /etc/strongswan.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_config]
+
+- name: Deploy charon.conf
+  ansible.builtin.template:
+    src: charon.conf.j2
+    dest: /etc/strongswan.d/charon.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_config]
+
+- name: Deploy charon-logging.conf
+  ansible.builtin.template:
+    src: charon-logging.conf.j2
+    dest: /etc/strongswan.d/charon-logging.conf
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_config]
+
+# =============================================================================
+# Configure Sysctl
+# =============================================================================
+
+- name: Configure sysctl - disable parameters
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "0"
+    state: present
+  loop: "{{ ipsec_sysctl_disable }}"
+  tags: [ipsec_gateway, ipsec_gateway_sysctl]
+
+- name: Configure sysctl - enable parameters
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    state: present
+  loop: "{{ ipsec_sysctl_enable }}"
+  tags: [ipsec_gateway, ipsec_gateway_sysctl]
+
+# =============================================================================
+# AppArmor
+# =============================================================================
+
+- name: Check AppArmor charon profile exists
+  ansible.builtin.stat:
+    path: /etc/apparmor.d/local/usr.lib.ipsec.charon
+  register: ipsec_gateway_apparmor_profile
+  when: ipsec_gateway_apparmor
+  tags: [ipsec_gateway, ipsec_gateway_apparmor]
+
+- name: Allow charon to read ipsec.d directory in AppArmor
+  ansible.builtin.lineinfile:
+    path: /etc/apparmor.d/local/usr.lib.ipsec.charon
+    line: "  /etc/ipsec.d/** r,"
+    create: false
+  when:
+    - ipsec_gateway_apparmor
+    - ipsec_gateway_apparmor_profile.stat.exists
+  notify: Reload apparmor charon profile
+  tags: [ipsec_gateway, ipsec_gateway_apparmor]
+
+- name: Allow charon to write log file in AppArmor
+  ansible.builtin.lineinfile:
+    path: /etc/apparmor.d/local/usr.lib.ipsec.charon
+    line: "  {{ ipsec_gateway_charon_log_path }} rw,"
+    create: false
+  when:
+    - ipsec_gateway_apparmor
+    - ipsec_gateway_apparmor_profile.stat.exists
+  notify:
+    - Reload apparmor charon profile
+    - Restart strongswan
+  tags: [ipsec_gateway, ipsec_gateway_apparmor]
+
+# =============================================================================
+# Enable Services
+# =============================================================================
+
+- name: Enable and start strongswan-starter
+  ansible.builtin.systemd:
+    name: strongswan-starter
+    state: started
+    enabled: true
+  tags: [ipsec_gateway, ipsec_gateway_services]
+
+- name: Enable and start haveged
+  ansible.builtin.systemd:
+    name: haveged
+    state: started
+    enabled: true
+  when: ipsec_gateway_haveged
+  tags: [ipsec_gateway, ipsec_gateway_services]

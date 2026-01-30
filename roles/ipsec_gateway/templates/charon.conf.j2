@@ -1,0 +1,11 @@
+# charon.conf - Charon daemon configuration
+# Managed by Ansible (ipsec_gateway role) - do not edit manually
+#
+# This file overrides select charon settings. All other settings
+# use Ubuntu package defaults (no need to ship 78 plugin configs).
+
+    # Reuse existing IKE_SAs when initiating new CHILD_SAs
+    reuse_ikesa = yes
+
+    # Install routes for established IPsec tunnels
+    install_routes = no
