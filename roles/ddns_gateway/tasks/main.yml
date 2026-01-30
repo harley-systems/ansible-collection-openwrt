@@ -1,0 +1,80 @@
+---
+# DDNS Gateway role - Dynamic DNS updates via systemd timers (Linux)
+
+- name: Install DDNS gateway packages
+  ansible.builtin.apt:
+    name: "{{ ddns_gateway_packages }}"
+    state: present
+  tags: [ddns_gateway, ddns_gateway_packages]
+
+- name: Deploy DDNS update scripts
+  ansible.builtin.template:
+    src: ddns-update.sh.j2
+    dest: "{{ ddns_gateway_script_dir }}/ddns-{{ item.name }}-update.sh"
+    owner: root
+    group: root
+    mode: "0750"
+  loop: "{{ ddns_gateway_services }}"
+  tags: [ddns_gateway, ddns_gateway_scripts]
+
+- name: Deploy DDNS systemd service units
+  ansible.builtin.template:
+    src: ddns-update.service.j2
+    dest: "/etc/systemd/system/ddns-{{ item.name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ ddns_gateway_services }}"
+  notify: Reload systemd daemon
+  tags: [ddns_gateway, ddns_gateway_systemd]
+
+- name: Deploy DDNS systemd timer units
+  ansible.builtin.template:
+    src: ddns-update.timer.j2
+    dest: "/etc/systemd/system/ddns-{{ item.name }}.timer"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ ddns_gateway_services }}"
+  notify:
+    - Reload systemd daemon
+    - Restart ddns-gateway timers
+  tags: [ddns_gateway, ddns_gateway_systemd]
+
+- name: Enable DDNS timers
+  ansible.builtin.systemd:
+    name: "ddns-{{ item.name }}.timer"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop: "{{ ddns_gateway_services | selectattr('enabled', 'defined') | selectattr('enabled') | list }}"
+  when: ddns_gateway_enabled | bool
+  tags: [ddns_gateway, ddns_gateway_service]
+
+- name: Disable DDNS timers
+  ansible.builtin.systemd:
+    name: "ddns-{{ item.name }}.timer"
+    enabled: false
+    state: stopped
+  loop: "{{ ddns_gateway_services | rejectattr('enabled', 'defined') | list + ddns_gateway_services | selectattr('enabled', 'defined') | rejectattr('enabled') | list }}"
+  failed_when: false
+  when: ddns_gateway_enabled | bool
+  tags: [ddns_gateway, ddns_gateway_service]
+
+- name: Disable all DDNS timers (gateway disabled)
+  ansible.builtin.systemd:
+    name: "ddns-{{ item.name }}.timer"
+    enabled: false
+    state: stopped
+  loop: "{{ ddns_gateway_services }}"
+  failed_when: false
+  when: not (ddns_gateway_enabled | bool)
+  tags: [ddns_gateway, ddns_gateway_service]
+
+- name: Run initial DDNS update
+  ansible.builtin.systemd:
+    name: "ddns-{{ item.name }}.service"
+    state: started
+  loop: "{{ ddns_gateway_services | selectattr('enabled', 'defined') | selectattr('enabled') | list }}"
+  when: ddns_gateway_enabled | bool
+  tags: [ddns_gateway, ddns_gateway_run]

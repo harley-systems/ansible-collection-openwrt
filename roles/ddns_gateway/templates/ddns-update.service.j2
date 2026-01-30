@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+[Unit]
+Description=DDNS update for {{ item.domain }} ({{ item.provider }})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ ddns_gateway_script_dir }}/ddns-{{ item.name }}-update.sh
