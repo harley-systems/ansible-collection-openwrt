@@ -1,0 +1,57 @@
+#!/bin/bash
+# {{ ansible_managed }}
+# DDNS update script for {{ item.domain }} ({{ item.provider }})
+set -euo pipefail
+
+{% if item.ip_source == 'ec2_imdsv2' %}
+# Get current public IP from EC2 instance metadata (IMDSv2)
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+CURRENT_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/public-ipv4)
+{% elif item.ip_source == 'url' %}
+# Get current public IP from URL
+CURRENT_IP=$(curl -s "{{ item.ip_source_url | default('https://ifconfig.me') }}")
+{% elif item.ip_source == 'command' %}
+# Get current public IP from command
+CURRENT_IP=$({{ item.ip_source_command }})
+{% endif %}
+
+if [ -z "$CURRENT_IP" ]; then
+  echo "ERROR: Could not retrieve public IP" >&2
+  exit 1
+fi
+
+{% if item.provider == 'cloudflare' %}
+ZONE_ID="{{ item.zone_id }}"
+API_TOKEN="{{ item.api_token }}"
+RECORD_NAME="{{ item.record_name }}"
+HOSTNAME="{{ item.domain }}"
+TTL="{{ item.ttl | default(120) }}"
+PROXIED="{{ item.proxied | default(false) | string | lower }}"
+
+# Get existing DNS record ID
+RECORD_ID=$(curl -s -X GET \
+  "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?type=A&name=${HOSTNAME}" \
+  -H "Authorization: Bearer ${API_TOKEN}" \
+  -H "Content-Type: application/json" | \
+  python3 -c "import sys,json; r=json.load(sys.stdin); print(r['result'][0]['id'] if r['result'] else '')")
+
+if [ -z "$RECORD_ID" ]; then
+  # Create new record
+  curl -s -X POST \
+    "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+    -H "Authorization: Bearer ${API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    --data "{\"type\":\"A\",\"name\":\"${RECORD_NAME}\",\"content\":\"${CURRENT_IP}\",\"ttl\":${TTL},\"proxied\":${PROXIED}}" \
+    | python3 -c "import sys,json; r=json.load(sys.stdin); print('Created' if r['success'] else 'FAILED: '+str(r['errors']))"
+else
+  # Update existing record
+  curl -s -X PUT \
+    "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${RECORD_ID}" \
+    -H "Authorization: Bearer ${API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    --data "{\"type\":\"A\",\"name\":\"${RECORD_NAME}\",\"content\":\"${CURRENT_IP}\",\"ttl\":${TTL},\"proxied\":${PROXIED}}" \
+    | python3 -c "import sys,json; r=json.load(sys.stdin); print('Updated to '+r['result']['content'] if r['success'] else 'FAILED: '+str(r['errors']))"
+fi
+{% endif %}

@@ -1,0 +1,17 @@
+---
+# IPSec Gateway role handlers
+
+- name: Restart strongswan
+  ansible.builtin.systemd:
+    name: strongswan-starter
+    state: restarted
+
+- name: Start haveged
+  ansible.builtin.systemd:
+    name: haveged
+    state: started
+    enabled: true
+
+- name: Reload apparmor charon profile
+  ansible.builtin.command: apparmor_parser -r /etc/apparmor.d/usr.lib.ipsec.charon
+  changed_when: true

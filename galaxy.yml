@@ -4,7 +4,7 @@ version: 0.1.0
 readme: README.md
 authors:
   - Aharon Haravon <aharon@harley.systems>
-description: Ansible collection for OpenWRT router configuration in home/office environments. Includes VPN (IPsec/StrongSwan), ACME/Let's Encrypt, DDNS, firewall, WiFi, and DHCP/DNS management.
+description: Ansible collection for OpenWRT router configuration in home/office environments. Includes VPN (IPsec/StrongSwan) for both OpenWRT and Linux/Ubuntu gateways, ACME/Let's Encrypt, DDNS, firewall, WiFi, and DHCP/DNS management.
 license:
   - MIT
 license_file: LICENSE

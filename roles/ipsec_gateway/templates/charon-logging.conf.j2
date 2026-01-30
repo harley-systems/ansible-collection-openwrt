@@ -1,0 +1,25 @@
+# charon-logging.conf - Charon logging configuration
+# Managed by Ansible (ipsec_gateway role) - do not edit manually
+
+    filelog {
+        {{ ipsec_gateway_charon_log_path }} {
+            path = {{ ipsec_gateway_charon_log_path }}
+            append = no
+            time_format = %b %e %T
+            default = {{ ipsec_gateway_charon_log_default }}
+            flush_line = yes
+            ike_name = yes
+        }
+        stderr {
+            default = {{ ipsec_gateway_charon_log_default }}
+        }
+    }
+    syslog {
+        identifier = charon
+        daemon {
+        }
+        auth {
+            default = -1
+            ike = 0
+        }
+    }

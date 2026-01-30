@@ -1,0 +1,14 @@
+---
+# DDNS Gateway role handlers
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart ddns-gateway timers
+  ansible.builtin.systemd:
+    name: "ddns-{{ item.name }}.timer"
+    state: restarted
+    enabled: true
+  loop: "{{ ddns_gateway_services | selectattr('enabled', 'defined') | selectattr('enabled') | list }}"
+  when: ddns_gateway_enabled | bool

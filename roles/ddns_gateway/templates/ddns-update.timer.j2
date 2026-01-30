@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+[Unit]
+Description=DDNS update timer for {{ item.domain }}
+
+[Timer]
+OnBootSec={{ ddns_gateway_boot_delay }}
+OnUnitActiveSec={{ ddns_gateway_update_interval }}
+
+[Install]
+WantedBy=timers.target

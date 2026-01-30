@@ -1,0 +1,51 @@
+---
+# DDNS Gateway role defaults (Linux/Ubuntu systemd-based DDNS updates)
+#
+# This role manages dynamic DNS updates on Linux gateways using systemd
+# timers. It is the Linux counterpart to the `ddns` role (which uses
+# OpenWRT's ddns-scripts/UCI/openwrt_init).
+#
+# Currently supports Cloudflare as a provider, with IP detection via
+# EC2 IMDSv2, HTTP URL, or arbitrary command.
+
+# =============================================================================
+# Global settings
+# =============================================================================
+
+# Master enable/disable switch
+ddns_gateway_enabled: false
+
+# Packages to install (apt)
+ddns_gateway_packages:
+  - curl
+  - python3
+
+# Systemd timer intervals
+ddns_gateway_update_interval: 5min
+ddns_gateway_boot_delay: 30s
+
+# Directory for update scripts
+ddns_gateway_script_dir: /usr/local/bin
+
+# =============================================================================
+# Services
+# =============================================================================
+
+# List of DDNS service definitions. Each entry creates its own update
+# script, systemd service unit, and systemd timer.
+#
+# Example:
+# ddns_gateway_services:
+#   - name: cloudflare_vpn           # Used in filenames (must be unique)
+#     enabled: true
+#     provider: cloudflare            # DNS provider (cloudflare)
+#     domain: vpn.example.com         # FQDN to update
+#     record_name: vpn                # DNS record name
+#     zone_id: "abc123"               # Cloudflare Zone ID
+#     api_token: "xyz789"             # Cloudflare API Token
+#     ip_source: ec2_imdsv2           # ec2_imdsv2, url, command
+#     ip_source_url: https://ifconfig.me  # Used when ip_source=url
+#     ip_source_command: ""           # Used when ip_source=command
+#     ttl: 120                        # DNS record TTL
+#     proxied: false                  # Cloudflare proxy toggle
+ddns_gateway_services: []
