@@ -2,7 +2,7 @@
 # Managed by Ansible (ipsec_gateway role) - do not edit manually
 
     filelog {
-        {{ ipsec_gateway_charon_log_path }} {
+        "{{ ipsec_gateway_charon_log_path }}" {
             path = {{ ipsec_gateway_charon_log_path }}
             append = no
             time_format = %b %e %T
