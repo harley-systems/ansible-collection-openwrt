@@ -9,3 +9,13 @@
 
     # Install routes for established IPsec tunnels
     install_routes = no
+
+    # Disable the constraints plugin to work around a bug in StrongSwan
+    # 5.9.13 (Ubuntu 24.04) where Name Constraints validation uses AND
+    # instead of OR semantics across permitted constraints (fixed in 5.9.14).
+    # Name Constraints remain enforced in the X.509 certificates themselves.
+    plugins {
+        constraints {
+            load = no
+        }
+    }
