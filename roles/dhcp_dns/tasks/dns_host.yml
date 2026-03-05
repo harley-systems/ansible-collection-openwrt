@@ -1,25 +1,29 @@
 ---
 # Configure a DNS A record (domain entry)
+# UCI section names cannot contain hyphens; sanitize with replace('-', '_')
+# while preserving the original hostname as the DNS name value.
 
 - name: "Ensure DNS host section exists: {{ host.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ host.name }}_domain"
+    s: "{{ host.name | replace('-', '_') }}_domain"
     type: domain
   notify: restart dnsmasq
 
 - name: "Configure DNS host name: {{ host.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ host.name }}_domain"
+    s: "{{ host.name | replace('-', '_') }}_domain"
     name: name
     val: "{{ host.name }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   notify: restart dnsmasq
 
 - name: "Configure DNS host IP: {{ host.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ host.name }}_domain"
+    s: "{{ host.name | replace('-', '_') }}_domain"
     name: ip
     val: "{{ host.ip }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   notify: restart dnsmasq
