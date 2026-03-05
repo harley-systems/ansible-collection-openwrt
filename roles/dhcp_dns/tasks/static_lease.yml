@@ -1,33 +1,41 @@
 ---
 # Configure a static DHCP lease
+# UCI section names cannot contain hyphens; use a sanitized version internally
+# while preserving the original name as the DNS hostname.
+# ignore_errors in check mode: if the section is new, creation is skipped in
+# check mode and dependent tasks would fail trying to set fields on a non-existent
+# section — which is a check-mode artefact, not a real error.
 
 - name: "Ensure static lease section exists: {{ lease.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ lease.name }}"
+    s: "{{ lease.name | replace('-', '_') }}"
     type: host
   notify: restart dnsmasq
 
 - name: "Configure static lease IP: {{ lease.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ lease.name }}"
+    s: "{{ lease.name | replace('-', '_') }}"
     name: ip
     val: "{{ lease.ip }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   notify: restart dnsmasq
 
 - name: "Configure static lease MAC: {{ lease.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ lease.name }}"
+    s: "{{ lease.name | replace('-', '_') }}"
     name: mac
     val: "{{ lease.mac }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   notify: restart dnsmasq
 
 - name: "Configure static lease hostname: {{ lease.name }}"
   harley.openwrt.uci:
     p: dhcp
-    s: "{{ lease.name }}"
+    s: "{{ lease.name | replace('-', '_') }}"
     name: name
     val: "{{ lease.name }}"
+  ignore_errors: "{{ ansible_check_mode }}"
   notify: restart dnsmasq
