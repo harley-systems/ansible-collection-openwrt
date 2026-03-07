@@ -25,6 +25,9 @@ acme_cert_name: "{{ acme_domain | replace('*', 'wildcard') | replace('.', '_') }
 # Configure uhttpd to use this certificate
 acme_configure_uhttpd: false
 
+# Command to run after successful certificate renewal (e.g. "/etc/init.d/stunnel reload")
+acme_update_cmd: ""
+
 # Paths where ACME stores certificates (auto-generated based on domain)
 # For ECC keys: /etc/acme/<domain>_ecc/
 # For RSA keys: /etc/acme/<domain>/

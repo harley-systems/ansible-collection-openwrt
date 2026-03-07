@@ -13,3 +13,6 @@ config cert '{{ acme_cert_name }}'
 	option validation_method 'dns'
 	option dns '{{ acme_dns_provider }}'
 	option credentials '/etc/acme/credentials.env'
+{% if acme_update_cmd %}
+	option update_cmd '{{ acme_update_cmd }}'
+{% endif %}
