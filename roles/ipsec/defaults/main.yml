@@ -25,18 +25,28 @@ ipsec_charondebug: "ike 2, knl 2, cfg 2, net 2, esp 2, dmn 2, mgr 2"
 ipsec_uniqueids: true
 
 # IKE proposals (comma-separated list)
+# Includes modern elliptic curve DH groups (curve25519, ecp256, ecp384)
+# required by Android StrongSwan and other modern clients
 ipsec_ike_default: >-
-  aes128-sha256-modp2048,
-  aes256-sha256-modp2048,
+  aes256gcm16-sha384-curve25519,
+  aes256gcm16-sha256-ecp256,
+  aes256gcm16-sha384-ecp384,
+  aes256gcm16-sha384-modp4096,
+  aes256-sha384-curve25519,
+  aes256-sha256-ecp256,
   aes256-sha384-modp4096,
-  aes256gcm16-sha384-modp4096
+  aes256-sha256-modp2048,
+  aes128gcm16-sha256-ecp256,
+  aes128-sha256-ecp256,
+  aes128-sha256-modp2048
 
 # ESP proposals (comma-separated list)
 ipsec_esp_default: >-
-  aes128-sha256,
-  aes256-sha256,
+  aes256gcm16,
   aes256-sha384,
-  aes256gcm16
+  aes256-sha256,
+  aes128gcm16,
+  aes128-sha256
 
 # DPD (Dead Peer Detection) settings
 ipsec_dpdaction: clear      # none, clear, hold, restart
