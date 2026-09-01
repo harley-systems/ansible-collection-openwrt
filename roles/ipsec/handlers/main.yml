@@ -1,6 +1,29 @@
 ---
 # IPSec role handlers
+#
+# Two handlers, chosen by what a change actually requires. Restarting charon
+# drops every established SA, which on a road-warrior gateway means kicking
+# every connected client off the VPN. Most changes do not need that:
+# connection definitions, secrets and certificates can all be re-read in place.
+
+- name: reload ipsec
+  # Re-reads certificates, CRLs and secrets (rereadall) and connection
+  # definitions (reload) without restarting charon, so established tunnels
+  # survive. Falls back to start if the daemon is not running.
+  #
+  # Caveat: reload adds and updates connections but does not reliably unload
+  # ones deleted from ipsec.conf. If a connection is removed outright and it
+  # must be gone from the running daemon immediately, restart by hand.
+  ansible.builtin.shell: |
+    if ipsec status >/dev/null 2>&1; then
+      ipsec rereadall && ipsec reload
+    else
+      ipsec start
+    fi
+  changed_when: true
 
 - name: restart ipsec
+  # Only for changes charon cannot pick up at runtime: new packages or plugins,
+  # and strongswan.conf (daemon-level settings, plugin loading, logging).
   ansible.builtin.shell: ipsec restart || ipsec start
   changed_when: true
