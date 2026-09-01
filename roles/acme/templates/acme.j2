@@ -12,7 +12,27 @@ config cert '{{ acme_cert_name }}'
 	option domains '{{ acme_domain }}'
 	option validation_method 'dns'
 	option dns '{{ acme_dns_provider }}'
-	option credentials '/etc/acme/credentials.env'
+{#
+  /etc/init.d/acme does:
+      load_credentials() { eval export "$1"; }
+      config_list_foreach "$section" credentials load_credentials
+  so `credentials` must be a LIST of KEY=value assignments. Passing a file path
+  evaluated to `export /etc/acme/credentials.env`, a silent no-op.
+#}
+{% if acme_dns_provider == 'dns_cf' %}
+	list credentials 'CF_Token={{ acme_cf_token }}'
+	list credentials 'CF_Zone_ID={{ acme_cf_zone_id }}'
+{% elif acme_dns_provider == 'dns_gd' %}
+	list credentials 'GD_Key={{ acme_gd_key }}'
+	list credentials 'GD_Secret={{ acme_gd_secret }}'
+{% elif acme_dns_provider == 'dns_aws' %}
+	list credentials 'AWS_ACCESS_KEY_ID={{ acme_aws_access_key }}'
+	list credentials 'AWS_SECRET_ACCESS_KEY={{ acme_aws_secret_key }}'
+{% else %}
+{% for key, value in (acme_credentials | default({})).items() %}
+	list credentials '{{ key }}={{ value }}'
+{% endfor %}
+{% endif %}
 {% if acme_update_cmd %}
 	option update_cmd '{{ acme_update_cmd }}'
 {% endif %}
