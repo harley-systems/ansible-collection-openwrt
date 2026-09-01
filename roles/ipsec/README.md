@@ -285,6 +285,32 @@ None.
 - `ipsec_autostart` - rc.local configuration
 - `ipsec_swanctl` - Disabling the conflicting swanctl service
 
+## Handlers
+
+Two handlers, chosen by what the change actually needs:
+
+| Handler | Fired by | Effect |
+|---|---|---|
+| `reload ipsec` | certificates, private keys, updown script, `ipsec.conf`, `ipsec.secrets` | `ipsec rereadall && ipsec reload` - **established tunnels survive** |
+| `restart ipsec` | package installs, `strongswan.conf` | full `ipsec restart` - drops every SA |
+
+Restarting charon disconnects every client, which on a road-warrior gateway
+means kicking phones and laptops off the VPN for a connection-parameter change
+they did not need to notice. Most changes are re-readable in place, so the
+default is `reload`.
+
+Only two things genuinely require a restart: new packages/plugins, and
+`strongswan.conf`, which configures the daemon itself (plugin loading, logging,
+charon settings) and is read once at startup.
+
+**Caveat:** `reload` adds and updates connections but does not reliably unload
+ones deleted from `ipsec.conf`. If you remove a connection outright and need it
+gone from the running daemon immediately, restart by hand:
+
+```bash
+ssh root@router ipsec restart
+```
+
 ## Notes
 
 - Keep private keys in Ansible Vault or a secure location
