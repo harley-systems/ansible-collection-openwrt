@@ -183,3 +183,26 @@
     - ipsec_autostart
     - ipsec_rc_check.rc != 0
   tags: [ipsec, ipsec_autostart]
+
+# OpenWrt ships /etc/init.d/swanctl enabled by default. It starts a second
+# charon (PROG=/usr/lib/ipsec/charon) on the swanctl/vici stack with no
+# connections loaded, since this role configures the stroke stack via
+# /etc/ipsec.conf. Both race for UDP 500/4500 at boot; when the config-less one
+# wins it answers every IKE_SA_INIT with NO_PROPOSAL_CHOSEN while
+# `ipsec statusall` (talking to the other daemon over the stroke socket) still
+# shows every connection loaded. `ipsec restart` does not clear it, because
+# starter does not track that process.
+- name: Stop conflicting swanctl service
+  ansible.builtin.command: /etc/init.d/swanctl stop
+  args:
+    removes: /etc/init.d/swanctl
+  changed_when: false
+  when: ipsec_disable_swanctl
+  tags: [ipsec, ipsec_autostart, ipsec_swanctl]
+
+- name: Disable conflicting swanctl service at boot
+  ansible.builtin.command: /etc/init.d/swanctl disable
+  args:
+    removes: /etc/rc.d/S90swanctl
+  when: ipsec_disable_swanctl
+  tags: [ipsec, ipsec_autostart, ipsec_swanctl]

@@ -200,3 +200,15 @@ ipsec_sysctl_enable:
 
 # Add ipsec to rc.local for autostart
 ipsec_autostart: true
+
+# Stop and disable OpenWrt's swanctl init script.
+#
+# The strongswan packages ship /etc/init.d/swanctl enabled by default. It starts
+# a second charon using the swanctl/vici stack, which has no connections loaded
+# because this role configures the legacy stroke stack via /etc/ipsec.conf. Both
+# daemons race for UDP 500/4500 at boot, and when the config-less one wins, every
+# handshake is rejected with "no IKE config found ... NO_PROPOSAL_CHOSEN" while
+# `ipsec statusall` still reports all connections loaded correctly.
+#
+# Only set this to false if you intend to manage connections through swanctl.
+ipsec_disable_swanctl: true
