@@ -47,6 +47,31 @@ conn {{ conn.name }}
 {% if conn.dpddelay is defined %}
     dpddelay={{ conn.dpddelay }}
 {% endif %}
+{#
+  Renegotiation control. Same failure mode as DPD above, different trigger: any
+  exchange the responder INITIATES will go unanswered while the client sleeps
+  behind an expired NAT binding, and after 5 retransmits strongSwan tears the
+  tunnel down. Disabling DPD only removes one such exchange - CHILD_SA rekey and
+  IKE reauthentication remain, and both fire on fixed timers.
+
+  rekey=no stops this responder requesting renegotiation while still honouring
+  rekeys requested by the peer, so an awake client drives them. reauth=no avoids
+  full reauthentication (IKEv2 rekeys the IKE_SA instead). Generous lifetimes
+  keep hard expiry rare so the client, which uses shorter defaults, always
+  renegotiates first while it is actually awake and passing traffic.
+#}
+{% if conn.rekey is defined %}
+    rekey={{ conn.rekey }}
+{% endif %}
+{% if conn.reauth is defined %}
+    reauth={{ conn.reauth }}
+{% endif %}
+{% if conn.ikelifetime is defined %}
+    ikelifetime={{ conn.ikelifetime }}
+{% endif %}
+{% if conn.keylife is defined %}
+    keylife={{ conn.keylife }}
+{% endif %}
 
     # Left (local) side
 {% if conn.left is defined %}
