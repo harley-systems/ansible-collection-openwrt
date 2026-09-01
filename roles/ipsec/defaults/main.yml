@@ -111,6 +111,19 @@ ipsec_psk_secrets: []
 #   enabled       - auto setting: start, add, route, ignore (default: add)
 #   type          - tunnel or transport (default: tunnel)
 #   mark          - XFRM mark for policy matching
+#   dpdaction     - override the global ipsec_dpdaction for this connection
+#   dpddelay      - override the global ipsec_dpddelay for this connection
+#
+# NOTE on dpdaction for road-warrior responders serving mobile clients:
+# use dpdaction: none. A phone that sleeps stops sending NAT-T keepalives, its
+# carrier NAT binding expires, and DPD probes to the now-stale port go nowhere.
+# With dpdaction=clear the responder then tears down a tunnel the client still
+# believes is up, and the user sees "connected but no internet" until the client
+# eventually gives up and re-establishes. Only the peer behind the NAT can keep
+# that binding alive, so the responder cannot stop it expiring - it can only
+# avoid destroying the SA. With dpdaction=none the SA survives the idle period
+# and the client's next packet updates the endpoint via NAT-T/MOBIKE.
+# Always-on site-to-site peers should keep liveness detection.
 #
 # Left side (local):
 #   left          - Local address (%any, IP, or %defaultroute)
