@@ -283,6 +283,7 @@ None.
 - `ipsec_config` - Configuration files
 - `ipsec_sysctl` - Sysctl settings
 - `ipsec_autostart` - rc.local configuration
+- `ipsec_swanctl` - Disabling the conflicting swanctl service
 
 ## Notes
 
@@ -290,6 +291,31 @@ None.
 - The firewall role should be configured to allow IPSec traffic (UDP 500, 4500, ESP, AH)
 - VTI interfaces are created dynamically by the updown script
 - Each connection needs a unique mark value
+
+### swanctl must stay disabled
+
+This role configures the **legacy stroke stack** (`/etc/ipsec.conf`). OpenWrt ships
+`/etc/init.d/swanctl` **enabled by default**, which starts a *second* charon on the
+swanctl/vici stack with no connections loaded. Both daemons race for UDP 500/4500 at
+boot, and if the config-less one wins, the VPN fails completely with:
+
+```
+[IKE] no IKE config found for <wan-ip>...<peer>, sending NO_PROPOSAL_CHOSEN
+```
+
+This is deceptive: `ipsec statusall` queries the *other* daemon over the stroke socket
+and reports every connection loaded correctly, and `ipsec restart` does not clear the
+squatter because `starter` does not track it.
+
+`ipsec_disable_swanctl` (default `true`) stops and disables it. To confirm which daemon
+owns the ports:
+
+```bash
+netstat -lnup | grep ':500 '   # PID must match the starter-managed charon
+ps w | grep charon             # exactly one charon plus one starter
+```
+
+Set `ipsec_disable_swanctl: false` only if you intend to manage connections via swanctl.
 - For road-warrior, ensure the virtual IP pool doesn't overlap with existing networks
 
 ## Troubleshooting
