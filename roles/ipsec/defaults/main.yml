@@ -113,6 +113,10 @@ ipsec_psk_secrets: []
 #   mark          - XFRM mark for policy matching
 #   dpdaction     - override the global ipsec_dpdaction for this connection
 #   dpddelay      - override the global ipsec_dpddelay for this connection
+#   rekey         - yes/no: whether THIS side may request renegotiation
+#   reauth        - yes/no: full reauthentication vs IKE_SA rekey (IKEv2)
+#   ikelifetime   - IKE_SA lifetime (e.g. 24h)
+#   keylife       - CHILD_SA lifetime (e.g. 8h)
 #
 # NOTE on dpdaction for road-warrior responders serving mobile clients:
 # use dpdaction: none. A phone that sleeps stops sending NAT-T keepalives, its
@@ -125,6 +129,20 @@ ipsec_psk_secrets: []
 # and the client's next packet updates the endpoint via NAT-T/MOBIKE.
 # Always-on site-to-site peers should keep liveness detection.
 #
+# dpdaction alone is NOT sufficient. Any exchange the responder initiates fails
+# the same way while the client sleeps, and strongSwan tears the tunnel down
+# after 5 retransmits. DPD is only one such exchange; CHILD_SA rekey and IKE
+# reauthentication fire on fixed timers and will kill the tunnel just as
+# reliably. For a road-warrior responder use the full set:
+#
+#   dpdaction: none
+#   rekey: 'no'          # never request renegotiation; still answers the peer's
+#   reauth: 'no'         # rekey the IKE_SA instead of full reauthentication
+#   ikelifetime: 24h     # generous, so hard expiry is rare
+#   keylife: 8h          # client defaults are shorter, so it rekeys first
+#
+# Quote 'no'/'yes' in YAML or they become booleans and render as True/False,
+# which strongSwan will not parse.
 # Left side (local):
 #   left          - Local address (%any, IP, or %defaultroute)
 #   leftid        - Local identity (DN string)
