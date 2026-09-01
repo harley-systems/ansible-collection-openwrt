@@ -41,17 +41,52 @@
   tags: [acme, acme_config]
 
 - name: Save credentials to ACME account.conf (Cloudflare)
+  # regexp is required: without it, rotating a credential appends a second
+  # SAVED_CF_Token line instead of replacing the existing one.
   ansible.builtin.lineinfile:
     path: /etc/acme/account.conf
-    line: "{{ item }}"
+    regexp: "^{{ item.key }}="
+    line: '{{ item.key }}="{{ item.value }}"'
     create: true
     owner: root
     group: root
     mode: "0600"
   loop:
-    - 'SAVED_CF_Token="{{ acme_cf_token }}"'
-    - 'SAVED_CF_Zone_ID="{{ acme_cf_zone_id }}"'
+    - {key: SAVED_CF_Token, value: "{{ acme_cf_token }}"}
+    - {key: SAVED_CF_Zone_ID, value: "{{ acme_cf_zone_id }}"}
+  loop_control:
+    label: "{{ item.key }}"
   when: acme_dns_provider == 'dns_cf'
+  no_log: true
+  notify: restart acme
+  tags: [acme, acme_credentials]
+
+# acme.sh sources the per-domain config at the start of renew(), which injects
+# the stored CF_Token into the environment. dns_cf.sh then resolves
+#   CF_Token="${CF_Token:-$(_readaccountconf_mutable CF_Token)}"
+# so the already-set value from this file WINS over account.conf. If it is not
+# updated as well, rotating the token anywhere else is a silent no-op and every
+# renewal keeps failing with the old credential.
+- name: Check for existing per-domain acme.sh config
+  ansible.builtin.stat:
+    path: "{{ acme_cert_dir }}/{{ acme_domain }}.conf"
+  register: acme_domain_conf
+  tags: [acme, acme_credentials]
+
+- name: Update DNS credentials in per-domain acme.sh config (Cloudflare)
+  ansible.builtin.lineinfile:
+    path: "{{ acme_cert_dir }}/{{ acme_domain }}.conf"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}='{{ item.value }}'"
+  loop:
+    - {key: CF_Token, value: "{{ acme_cf_token }}"}
+    - {key: CF_Zone_ID, value: "{{ acme_cf_zone_id }}"}
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - acme_dns_provider == 'dns_cf'
+    - acme_domain_conf.stat.exists
+  no_log: true
   notify: restart acme
   tags: [acme, acme_credentials]
 
