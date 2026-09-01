@@ -32,6 +32,21 @@ conn {{ conn.name }}
 {% if conn.type is defined %}
     type={{ conn.type }}
 {% endif %}
+{#
+  Per-connection DPD override. A road-warrior responder serving mobile clients
+  usually wants dpdaction=none: a sleeping phone stops sending NAT-T keepalives,
+  its carrier NAT binding expires, and DPD probes to the now-stale port go
+  nowhere - so the responder tears down a tunnel the client still believes is
+  up, and the user sees "connected but no internet". Always-on site-to-site
+  peers still want liveness detection, hence a per-connection override rather
+  than changing the global default.
+#}
+{% if conn.dpdaction is defined %}
+    dpdaction={{ conn.dpdaction }}
+{% endif %}
+{% if conn.dpddelay is defined %}
+    dpddelay={{ conn.dpddelay }}
+{% endif %}
 
     # Left (local) side
 {% if conn.left is defined %}
