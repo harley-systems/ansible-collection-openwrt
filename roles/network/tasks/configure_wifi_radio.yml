@@ -126,3 +126,14 @@
     name: hidden
     val: "{{ '1' if radio.hidden | default(false) else '0' }}"
   notify: reload wifi
+
+# AP client isolation: clients on this SSID cannot reach each other directly.
+# Only set when isolate is given, so existing configs see no change.
+- name: "Configure {{ radio.interface }} client isolation"
+  harley.openwrt.uci:
+    p: wireless
+    s: "{{ radio.interface }}"
+    name: isolate
+    val: "{{ '1' if radio.isolate | bool else '0' }}"
+  when: radio.isolate is defined
+  notify: reload wifi
