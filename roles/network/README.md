@@ -108,6 +108,7 @@ network_wifi_radios:
 | `key` | - | WiFi password |
 | `macaddr` | - | Override MAC address |
 | `hidden` | false | Hide SSID |
+| `isolate` | - | Block client-to-client traffic on this SSID (AP isolation). Unset leaves the UCI option untouched |
 
 ## Dependencies
 

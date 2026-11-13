@@ -71,5 +71,6 @@ network_wifi_enabled: false
 #     key: "wifi_password"
 #     macaddr: ""            # Optional: override MAC address
 #     hidden: false          # Hide SSID
+#     isolate: false         # Optional: block client-to-client traffic
 
 network_wifi_radios: []
